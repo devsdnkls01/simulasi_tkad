@@ -5,11 +5,44 @@ import { Prisma } from '@prisma/client';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+interface CacheEntry {
+  data: {
+    success: boolean;
+    stats: {
+      totalPeserta: number;
+      highestScore: number;
+      averageScore: number;
+      tuntasCount: number;
+      passingRate: number;
+    };
+    podium: unknown[];
+    results: unknown[];
+    lastUpdated: string;
+  };
+  timestamp: number;
+}
+
+const leaderboardCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 3000; // 3 seconds in-memory cache for ultra-fast response
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const subjectParam = searchParams.get('subject') || 'all';
     const searchQuery = searchParams.get('search')?.trim() || '';
+
+    const cacheKey = `${subjectParam}:${searchQuery}`;
+    const cached = leaderboardCache.get(cacheKey);
+    const nowMs = Date.now();
+
+    if (cached && nowMs - cached.timestamp < CACHE_TTL_MS) {
+      return NextResponse.json(cached.data, {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+          'X-Cache': 'HIT',
+        },
+      });
+    }
 
     // Build Prisma query filter
     const whereClause: Prisma.ResultWhereInput = {};
@@ -129,27 +162,31 @@ export async function GET(req: NextRequest) {
     });
 
     const podium = formattedResults.slice(0, 3);
-
-    return NextResponse.json(
-      {
-        success: true,
-        stats: {
-          totalPeserta,
-          highestScore,
-          averageScore,
-          tuntasCount,
-          passingRate,
-        },
-        podium,
-        results: formattedResults,
-        lastUpdated: new Date().toISOString(),
+    const responsePayload = {
+      success: true,
+      stats: {
+        totalPeserta,
+        highestScore,
+        averageScore,
+        tuntasCount,
+        passingRate,
       },
-      {
-        headers: {
-          'Cache-Control': 'no-store, max-age=0',
-        },
-      }
-    );
+      podium,
+      results: formattedResults,
+      lastUpdated: new Date().toISOString(),
+    };
+
+    leaderboardCache.set(cacheKey, {
+      data: responsePayload,
+      timestamp: Date.now(),
+    });
+
+    return NextResponse.json(responsePayload, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+        'X-Cache': 'MISS',
+      },
+    });
   } catch (error: unknown) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error fetching public leaderboard:', error);
