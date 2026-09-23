@@ -6,37 +6,77 @@ import { logAudit } from '@/lib/audit';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
+    const studentIdInput = body.student_id;
+    const nameInput = body.nama || body.nama_lengkap;
     const nisnInput = body.nisn || body.nomor_peserta;
     const tokenInput = body.token_code || body.token;
 
-    if (!nisnInput) {
-      return NextResponse.json(
-        { error: 'NISN atau Nomor Peserta wajib diisi.' },
-        { status: 400 }
-      );
+    let student = null;
+
+    if (studentIdInput) {
+      // 1. Direct ID selection from autocomplete dropdown
+      student = await prisma.student.findUnique({
+        where: { id: String(studentIdInput) },
+      });
+    } else if (nameInput) {
+      // 2. Name search with multi-word matching
+      const query = String(nameInput).trim();
+      const words = query
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 0);
+
+      const matchingStudents = await prisma.student.findMany({
+        where: {
+          status: 'ACTIVE',
+          AND: words.map((word) => ({
+            nama_lengkap: {
+              contains: word,
+              mode: 'insensitive',
+            },
+          })),
+        },
+      });
+
+      if (matchingStudents.length === 1) {
+        student = matchingStudents[0];
+      } else if (matchingStudents.length > 1) {
+        return NextResponse.json(
+          {
+            error: `Ditemukan ${matchingStudents.length} siswa dengan nama tersebut. Harap pilih nama lengkap Anda dari daftar pilihan.`,
+            suggestions: matchingStudents.map((s) => ({
+              id: s.id,
+              nama_lengkap: s.nama_lengkap,
+              kelas: s.kelas,
+            })),
+          },
+          { status: 400 }
+        );
+      }
+    } else if (nisnInput) {
+      // 3. Fallback for NISN / Nomor Peserta / NIS
+      const trimmedIdentifier = String(nisnInput).trim();
+      student = await prisma.student.findFirst({
+        where: {
+          OR: [
+            { nisn: trimmedIdentifier },
+            { nomor_peserta: trimmedIdentifier },
+            { nis: trimmedIdentifier },
+            { nama_lengkap: { equals: trimmedIdentifier, mode: 'insensitive' } },
+          ],
+        },
+      });
     }
 
-    const trimmedIdentifier = String(nisnInput).trim();
-
-    // Find student by NISN, Nomor Peserta, or NIS
-    const student = await prisma.student.findFirst({
-      where: {
-        OR: [
-          { nisn: trimmedIdentifier },
-          { nomor_peserta: trimmedIdentifier },
-          { nis: trimmedIdentifier },
-        ],
-      },
-    });
-
     if (!student) {
+      const searchKey = nameInput || nisnInput || 'tidak diketahui';
       await logAudit({
         action: 'LOGIN_FAILED',
         userType: 'STUDENT',
-        details: `Gagal login dengan NISN/No: ${trimmedIdentifier} (data siswa tidak ditemukan)`,
+        details: `Gagal login dengan kata kunci: ${searchKey} (data siswa tidak ditemukan)`,
       });
       return NextResponse.json(
-        { error: 'Data siswa dengan NISN / Nomor Peserta tersebut tidak ditemukan.' },
+        { error: 'Nama peserta tidak ditemukan di database. Harap ketik nama dan pilih dari rekomendasi.' },
         { status: 404 }
       );
     }
@@ -101,7 +141,7 @@ export async function POST(req: NextRequest) {
       action: 'LOGIN_SUCCESS',
       userType: 'STUDENT',
       userId: student.id,
-      details: `Peserta ${student.nama_lengkap} (NISN: ${student.nisn || '-'}, No: ${student.nomor_peserta}) berhasil login ${matchedExam ? `dengan token ${trimmedToken} untuk ${matchedExam.nama_ujian}` : 'ke dashboard'}.`,
+      details: `Peserta ${student.nama_lengkap} (Kelas: ${student.kelas || 'VI'}) berhasil login ${matchedExam ? `dengan token ${trimmedToken} untuk ${matchedExam.nama_ujian}` : 'ke dashboard'}.`,
     });
 
     // Check if student has an active ongoing exam session that MUST be finished first
