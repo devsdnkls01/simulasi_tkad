@@ -4,13 +4,22 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'SIMULASI TKA/TKAD SD — Platform Ujian Resmi',
+  title: 'SIMULASI TKA/TKAD SD — Platform Ujian & Belajar Resmi',
   description:
-    'Platform Simulasi Tes Kemampuan Akademik (TKA/TKAD) Sekolah Dasar dengan timer server terpusat dan autosave real-time.',
+    'Platform Simulasi Tes Kemampuan Akademik (TKA/TKAD) Sekolah Dasar dengan timer server terpusat, penguncian otomatis, dan modul belajar interaktif.',
+  authors: [{ name: 'SD Negeri Kalisalak 01' }],
+  keywords: ['TKA', 'TKAD', 'Simulasi Ujian', 'Sekolah Dasar', 'Pusmendik', 'Asesmen'],
   icons: {
     icon: '/logo-tegal.svg',
     shortcut: '/logo-tegal.svg',
     apple: '/logo-tegal.svg',
+  },
+  openGraph: {
+    title: 'SIMULASI TKA/TKAD SD — Platform Ujian & Belajar Resmi',
+    description:
+      'Platform Simulasi Tes Kemampuan Akademik (TKA/TKAD) Sekolah Dasar dengan timer server terpusat dan bank soal resmi.',
+    type: 'website',
+    locale: 'id_ID',
   },
 };
 
@@ -20,6 +29,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
+  themeColor: '#2563eb',
 };
 
 export default function RootLayout({
