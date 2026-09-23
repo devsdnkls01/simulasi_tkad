@@ -9,7 +9,6 @@ import {
   Lock,
   ChevronRight,
   GraduationCap,
-  Trophy,
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 
@@ -25,16 +24,8 @@ export default function HomePage() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
-              href="/nilai"
-              className="inline-flex items-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 font-black text-xs transition-all shadow-xs"
-            >
-              <Trophy className="w-4 h-4 text-amber-600" />
-              <span>Papan Nilai</span>
-            </Link>
-
-            <Link
               href="/admin/login"
-              className="hidden md:inline-flex items-center gap-1.5 h-10 px-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs transition-all"
+              className="hidden sm:inline-flex items-center gap-1.5 h-10 px-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs transition-all"
             >
               <Lock className="w-3.5 h-3.5 text-slate-500" />
               <span>Portal Guru</span>
