@@ -55,17 +55,27 @@ interface ResultData {
   reviews?: QuestionReviewItem[];
 }
 
+function normalizeImageUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  if (trimmed.startsWith('/soal-images/')) return trimmed;
+  if (trimmed.startsWith('soal-images/')) return `/${trimmed}`;
+  const filename = trimmed.replace(/^\/+/, '');
+  return `/soal-images/${filename}`;
+}
+
 function parseImageUrls(raw: string | null): string[] {
   if (!raw) return [];
   if (raw.trim().startsWith('[')) {
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      if (Array.isArray(parsed)) return parsed.map(normalizeImageUrl).filter(Boolean);
     } catch {
       // fallback
     }
   }
-  return raw.split(',').map((s) => s.trim()).filter(Boolean);
+  return raw.split(',').map((s) => normalizeImageUrl(s.trim())).filter(Boolean);
 }
 
 export default function ExamResultPage({
