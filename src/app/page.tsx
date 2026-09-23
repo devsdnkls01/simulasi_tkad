@@ -63,22 +63,22 @@ export default function HomePage() {
           Media asesmen kemampuan akademik resmi untuk siswa <strong className="text-slate-800">{schoolName}</strong>. Dilengkapi bank soal bergambar Pusmendik, timer otoritatif server, penguncian jawaban otomatis, serta modul belajar interaktif.
         </p>
 
-        {/* Call to Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-lg mx-auto mb-12 w-full">
+        {/* Call to Action Buttons - Large, Prominent & High-Impact */}
+        <div className="flex flex-col sm:flex-row items-stretch justify-center gap-3.5 sm:gap-5 max-w-xl mx-auto mb-12 sm:mb-16 w-full">
           <Link
             href="/login"
-            className="w-full sm:w-auto flex-1 h-13 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm sm:text-base font-extrabold transition-all shadow-md shadow-blue-500/25 hover:shadow-lg active:scale-98 inline-flex items-center justify-center gap-2.5 cursor-pointer"
+            className="w-full sm:w-auto flex-1 min-h-[58px] sm:min-h-[64px] px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 text-white text-base sm:text-lg font-black tracking-wide transition-all shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] inline-flex items-center justify-center gap-3 cursor-pointer"
           >
-            <GraduationCap className="w-5 h-5" />
+            <GraduationCap className="w-6 h-6 shrink-0" />
             <span>MULAI SIMULASI UJIAN</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-5 h-5 shrink-0" />
           </Link>
 
           <Link
             href="/materi"
-            className="w-full sm:w-auto flex-1 h-13 px-6 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 text-sm sm:text-base font-bold transition-all shadow-xs hover:border-blue-300 active:scale-98 inline-flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto flex-1 min-h-[58px] sm:min-h-[64px] px-8 py-4 rounded-2xl bg-white hover:bg-blue-50/40 text-slate-900 border-2 border-slate-300/90 hover:border-blue-600 text-base sm:text-lg font-extrabold transition-all shadow-md shadow-slate-200/80 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] inline-flex items-center justify-center gap-3 cursor-pointer"
           >
-            <BookOpen className="w-4 h-4 text-blue-600" />
+            <BookOpen className="w-5 h-5 text-blue-600 shrink-0" />
             <span>Ruang Belajar & Modul</span>
           </Link>
         </div>
