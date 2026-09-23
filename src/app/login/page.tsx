@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   KeyRound,
   ChevronDown,
+  Trophy,
 } from 'lucide-react';
 
 export default function StudentLoginPage() {
@@ -302,14 +303,21 @@ export default function StudentLoginPage() {
             </div>
           </form>
 
-          {/* Materi Pembelajaran Banner */}
-          <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-center">
+          {/* Quick Links: Modul & Papan Nilai */}
+          <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-center gap-2">
+            <Link
+              href="/nilai"
+              className="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold inline-flex items-center gap-1.5 transition-colors border border-amber-300/70 shadow-2xs"
+            >
+              <Trophy className="w-3.5 h-3.5 text-amber-600" />
+              <span>Papan Nilai Siswa</span>
+            </Link>
             <Link
               href="/materi"
-              className="px-3.5 py-1.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold inline-flex items-center gap-1.5 transition-colors border border-blue-200/60"
+              className="px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold inline-flex items-center gap-1.5 transition-colors border border-blue-200/60"
             >
               <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-              <span>Buka Ruang Belajar & Modul TKA</span>
+              <span>Modul Belajar TKA</span>
             </Link>
           </div>
         </div>
