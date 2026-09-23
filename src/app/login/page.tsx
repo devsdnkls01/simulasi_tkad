@@ -131,16 +131,14 @@ export default function StudentLoginPage() {
           </div>
 
           <div className="flex justify-center mb-1">
-            <div className="p-1.5 bg-white rounded-xl shadow-2xs border border-slate-200/80 inline-block">
-              <Image
-                src="/logo-tegal.svg"
-                alt="Lambang Kabupaten Tegal"
-                width={40}
-                height={40}
-                priority
-                className="object-contain"
-              />
-            </div>
+            <Image
+              src="/logo-tegal.svg"
+              alt="Lambang Kabupaten Tegal"
+              width={44}
+              height={44}
+              priority
+              className="object-contain"
+            />
           </div>
 
           <h2 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
