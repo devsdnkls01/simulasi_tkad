@@ -206,36 +206,57 @@ function parsePusmendikHtml(filename: string, subjectType: 'bindo' | 'mtk'): Par
       bodyText = bodyText.replace(/<img[^>]*data-latex=["']([^"']+)["'][^>]*>/gi, (_, lat) => ` ${cleanLatexMath(lat)} `);
 
       // 4. Remove leaked instructions and URLs
-      bodyText = bodyText.replace(/Klik\s+(?:pada\s+)?setiap\s+pilihan\s+jawaban\s+benar!?\s*Jawaban\s+benar\s+lebih\s+dari\s+satu\.?/gi, '');
+      bodyText = bodyText.replace(/Klik\s+(?:pada\s+)?setiap\s+pilihan\s+jawaban\s+benar!?\s*(?:Jawaban\s+benar\s+lebih\s+dari\s+satu\.?)?/gi, '');
       bodyText = bodyText.replace(/Klik\s+(?:pada\s+)?(?:pilihan\s*)?Benar\s+atau\s+Salah\s+untuk\s+setiap\s+(?:pernyataan|pertanyaan)\s+berdasarkan\s+isi\s+teks!?/gi, '');
       bodyText = bodyText.replace(/Klik\s+(?:pada\s+)?pilihan\s*Mendukung\s*atau\s*Tidak\s*Mendukung\s*untuk\s*setiap\s*pernyataan\s*berdasarkan\s*isi\s*teks!?/gi, '');
-      bodyText = bodyText.replace(/Tentukan\s*Sesuai\s*atau\s*Tidak\s*Sesuai\s*untuk\s*setiap\s*pernyataan\s*berikut!?/gi, '');
+      bodyText = bodyText.replace(/Tentukan\s+(?:Sesuai|Benar)\s+atau\s+(?:Tidak\s+Sesuai|Salah)\s+untuk\s+setiap\s+pernyataan\s+(?:berikut|berdasarkan\s+isi\s+teks)!?/gi, '');
       bodyText = bodyText.replace(/Klik\s+pada\s+satu\s+pilihan\s+jawaban!?/gi, '');
-      bodyText = bodyText.replace(/Sumber(?:\s*teks)?\s*:?\s*https?:\/\/[^\s]+(?:\s*\([^\)]*\)|\s*dengan\s*penyesuaian)?/gi, '');
-      bodyText = bodyText.replace(/https?:\/\/[^\s]+/gi, '');
+      bodyText = bodyText.replace(/Jawaban\s+benar\s+lebih\s+dari\s+satu\.?/gi, '');
+      bodyText = bodyText.replace(/<p[^>]*>[\s\S]*?Sum[\s\S]*?ber:?[\s\S]*?<\/p>/gi, '');
+      bodyText = bodyText.replace(/<span[^>]*>[\s\S]*?Sum[\s\S]*?ber:?[\s\S]*?<\/span>/gi, '');
+      bodyText = bodyText.replace(/Sumber(?:\s*teks)?\s*:?\s*https?:\/\/[^\s<]+(?:\s*\([^\)]*\)|\s*dengan\s*penyesuaian)?/gi, '');
+      bodyText = bodyText.replace(/https?:\/\/[^\s<]+/gi, '');
       bodyText = bodyText.replace(/\(?\s*dengan\s*pen(?:yesuaian|\s+yesuaian)\s*\)?\.?/gi, '');
       bodyText = bodyText.replace(/\(?\s*de\s+ngan\s*penyesuaian\s*\)?\.?/gi, '');
       bodyText = bodyText.replace(/Sumb\s*er\s*:/gi, '');
       bodyText = bodyText.replace(/Sumber\s*:/gi, '');
 
       // 5. Clean HTML tags
-      const cleaned = bodyText
-        .replace(/<img[^>]*>/gi, '')
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/<[^>]+>/g, '\n')
+      bodyText = bodyText
+        .replace(/<\/(p|div|tr|h\d)>/gi, '\n\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
         .replace(/&nbsp;/g, ' ')
-        .split('\n')
-        .map(l => l.trim())
-        .filter(l => {
-          if (!l) return false;
-          const lower = l.toLowerCase();
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"');
+
+      const paragraphs = bodyText
+        .split(/\n\s*\n/)
+        .map((p) => {
+          const lines = p
+            .split('\n')
+            .map((l) => l.trim())
+            .filter(Boolean);
+          let merged = lines.join(' ');
+          merged = merged
+            .replace(/Tentukan\s+(?:Sesuai|Benar)\s+atau\s+(?:Tidak\s+Sesuai|Salah)\s+untuk\s+setiap\s+pernyataan\s+(?:berikut|berdasarkan\s+isi\s+teks)!?/gi, '')
+            .replace(/\s+!\s*$/, '')
+            .trim();
+          return merged;
+        })
+        .filter((p) => {
+          if (!p) return false;
+          const lower = p.toLowerCase();
           if (lower === 'benar' || lower === 'salah' || lower === 'atau' || lower === 'klik pada pilihan') return false;
+          if (lower.startsWith('sum') && lower.includes('ber:')) return false;
+          if (lower === 'sumber:' || lower === 'sumber teks:') return false;
           if (lower.startsWith('http://') || lower.startsWith('https://')) return false;
-          if (lower === 'sumber' || lower === 'sumber:' || lower === 'sumber teks:') return false;
-          return !l.startsWith('No Soal') && !l.startsWith('Kompetensi') && !l.startsWith('Kunci');
+          return !p.startsWith('No Soal') && !p.startsWith('Kompetensi') && !p.startsWith('Kunci');
         });
       
-      questionText = cleaned.join('\n\n');
+      questionText = paragraphs.join('\n\n');
     }
     
     if (!questionText) {
