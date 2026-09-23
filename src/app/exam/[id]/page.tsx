@@ -235,12 +235,15 @@ export default function ExamWorkspacePage({
     const currentQ = questions[currentIndex];
     if (!currentQ) return;
 
-    if (passedMinTimeQuestions[currentQ.id] || lockedQuestions[currentQ.id]) {
-      setMinTimeRemaining(0);
-      return;
+    const isAlreadyPassed = Boolean(passedMinTimeQuestions[currentQ.id] || lockedQuestions[currentQ.id]);
+
+    if (isAlreadyPassed) {
+      const t = setTimeout(() => setMinTimeRemaining(0), 0);
+      return () => clearTimeout(t);
     }
 
-    setMinTimeRemaining(MIN_QUESTION_SECONDS);
+    const initTimeout = setTimeout(() => setMinTimeRemaining(MIN_QUESTION_SECONDS), 0);
+
     const interval = setInterval(() => {
       setMinTimeRemaining((prev) => {
         if (prev <= 1) {
@@ -252,7 +255,10 @@ export default function ExamWorkspacePage({
       });
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initTimeout);
+      clearInterval(interval);
+    };
   }, [currentIndex, questions, passedMinTimeQuestions, lockedQuestions]);
 
   // Auto-dismiss minimum time notification alert

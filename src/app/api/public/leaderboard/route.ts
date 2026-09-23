@@ -16,16 +16,16 @@ export async function GET(req: NextRequest) {
 
     if (subjectParam !== 'all') {
       if (subjectParam === 'indo') {
-        whereClause.exam = { mata_pelajaran: { contains: 'Indonesia', mode: 'insensitive' } };
+        whereClause.exam = { mata_pelajaran: { contains: 'Indonesia' } };
       } else if (subjectParam === 'matematika') {
-        whereClause.exam = { mata_pelajaran: { contains: 'Matematika', mode: 'insensitive' } };
+        whereClause.exam = { mata_pelajaran: { contains: 'Matematika' } };
       } else if (subjectParam === 'ipas') {
-        whereClause.exam = { mata_pelajaran: { contains: 'IPAS', mode: 'insensitive' } };
+        whereClause.exam = { mata_pelajaran: { contains: 'IPAS' } };
       } else if (subjectParam === 'gabungan') {
         whereClause.exam = {
           OR: [
-            { mata_pelajaran: { contains: 'Gabungan', mode: 'insensitive' } },
-            { nama_ujian: { contains: 'Gabungan', mode: 'insensitive' } },
+            { mata_pelajaran: { contains: 'Gabungan' } },
+            { nama_ujian: { contains: 'Gabungan' } },
           ],
         };
       }
@@ -34,9 +34,9 @@ export async function GET(req: NextRequest) {
     if (searchQuery) {
       whereClause.student = {
         OR: [
-          { nama_lengkap: { contains: searchQuery, mode: 'insensitive' } },
-          { nomor_peserta: { contains: searchQuery, mode: 'insensitive' } },
-          { nisn: { contains: searchQuery, mode: 'insensitive' } },
+          { nama_lengkap: { contains: searchQuery } },
+          { nomor_peserta: { contains: searchQuery } },
+          { nisn: { contains: searchQuery } },
         ],
       };
     }
