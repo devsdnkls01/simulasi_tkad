@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getStudentSession } from '@/lib/auth';
+import { getStudentSession, STUDENT_COOKIE_NAME } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
 export async function GET() {
@@ -25,10 +25,18 @@ export async function GET() {
     });
 
     if (!student || student.status !== 'ACTIVE') {
-      return NextResponse.json(
-        { error: 'Akun peserta tidak aktif atau tidak ditemukan.' },
-        { status: 403 }
+      const res = NextResponse.json(
+        { error: 'Sesi akun peserta telah kedaluwarsa atau tidak ditemukan. Silakan login kembali.' },
+        { status: 401 }
       );
+      res.cookies.set({
+        name: STUDENT_COOKIE_NAME,
+        value: '',
+        httpOnly: true,
+        path: '/',
+        maxAge: 0,
+      });
+      return res;
     }
 
     return NextResponse.json({ student });

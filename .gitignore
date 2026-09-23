@@ -48,14 +48,10 @@ prisma/*.db-journal
 *.tsbuildinfo
 next-env.d.ts
 
-# Cloudinary CDN Managed Assets (Do NOT commit images to git)
-/public/soal-images/
+# Cloudinary / User Uploads (runtime uploads)
 /public/uploads/
-*.png
-*.jpg
-*.jpeg
-*.webp
-*.gif
-*.avif
+
+# Allow exam illustration assets and logos
+!/public/soal-images/**
 !/public/logo-tegal.svg
 
