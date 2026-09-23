@@ -26,10 +26,11 @@ export async function POST(req: NextRequest) {
       secure_url: result.secure_url,
       public_id: result.public_id,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Gagal mengunggah foto ke Cloudinary';
     console.error('Cloudinary Upload API Error:', error);
     return NextResponse.json(
-      { error: error.message || 'Gagal mengunggah foto ke Cloudinary' },
+      { error: message },
       { status: 500 }
     );
   }

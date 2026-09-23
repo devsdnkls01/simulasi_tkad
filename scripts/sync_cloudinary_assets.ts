@@ -37,8 +37,9 @@ async function main() {
         });
         urlMapping[localUrl] = res.secure_url;
         console.log(`✓ Berhasil: ${localUrl} -> ${res.secure_url}`);
-      } catch (err: any) {
-        console.error(`✕ Gagal mengunggah ${file}:`, err.message);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`✕ Gagal mengunggah ${file}:`, msg);
       }
     }
   }
@@ -56,8 +57,9 @@ async function main() {
       });
       urlMapping['/logo-tegal.svg'] = resLogo.secure_url;
       console.log(`✓ Logo Cloudinary URL: ${resLogo.secure_url}`);
-    } catch (err: any) {
-      console.error('✕ Gagal mengunggah logo:', err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('✕ Gagal mengunggah logo:', msg);
     }
   }
 
