@@ -64,22 +64,22 @@ export default function HomePage() {
           Media asesmen kemampuan akademik resmi untuk siswa <strong className="text-slate-800 font-bold">{schoolName}</strong>. Dilengkapi bank soal Pusmendik, timer otoritatif server, penguncian jawaban otomatis, serta modul belajar.
         </p>
 
-        {/* Call to Action Buttons - Proportional & Sleek */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-md mx-auto mb-6 sm:mb-8 w-full">
+        {/* Call to Action Buttons - Proportional, Sleek & Non-Wrapping */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-xl mx-auto mb-6 sm:mb-8 w-full px-2">
           <Link
             href="/login"
-            className="w-full sm:w-auto flex-1 h-12 px-6 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 text-white text-xs sm:text-sm font-black tracking-wide transition-all shadow-md shadow-blue-600/25 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-98 inline-flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto min-w-[220px] h-12 sm:h-13 px-6 sm:px-8 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 text-white text-xs sm:text-sm font-black tracking-wide transition-all shadow-md shadow-blue-600/30 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-98 inline-flex items-center justify-center gap-2.5 cursor-pointer whitespace-nowrap"
           >
-            <GraduationCap className="w-4 h-4 shrink-0" />
+            <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
             <span>MULAI SIMULASI UJIAN</span>
-            <ArrowRight className="w-4 h-4 shrink-0" />
+            <ArrowRight className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0" />
           </Link>
 
           <Link
             href="/materi"
-            className="w-full sm:w-auto flex-1 h-12 px-6 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-500 text-xs sm:text-sm font-bold transition-all shadow-xs hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 active:scale-98 inline-flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto min-w-[200px] h-12 sm:h-13 px-6 sm:px-7 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 text-xs sm:text-sm font-bold transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-98 inline-flex items-center justify-center gap-2.5 cursor-pointer whitespace-nowrap"
           >
-            <BookOpen className="w-4 h-4 text-blue-600 shrink-0" />
+            <BookOpen className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-blue-600 shrink-0" />
             <span>Ruang Belajar & Modul</span>
           </Link>
         </div>
