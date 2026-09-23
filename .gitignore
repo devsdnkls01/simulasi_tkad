@@ -54,4 +54,3 @@ next-env.d.ts
 # Allow exam illustration assets and logos
 !/public/soal-images/**
 !/public/logo-tegal.svg
-
