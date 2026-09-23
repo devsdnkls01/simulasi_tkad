@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -11,7 +12,7 @@ export async function GET(req: NextRequest) {
     const searchQuery = searchParams.get('search')?.trim() || '';
 
     // Build Prisma query filter
-    const whereClause: any = {};
+    const whereClause: Prisma.ResultWhereInput = {};
 
     if (subjectParam !== 'all') {
       if (subjectParam === 'indo') {
@@ -149,10 +150,11 @@ export async function GET(req: NextRequest) {
         },
       }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error fetching public leaderboard:', error);
     return NextResponse.json(
-      { error: 'Gagal memuat papan nilai publik', details: error.message },
+      { error: 'Gagal memuat papan nilai publik', details: errorMsg },
       { status: 500 }
     );
   }

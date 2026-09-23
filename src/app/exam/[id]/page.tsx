@@ -93,6 +93,12 @@ export default function ExamWorkspacePage({
   // Auto-submit guard
   const hasAutoSubmitted = useRef(false);
 
+  // Minimum Answering Time per Question (5 seconds minimum to prevent rushing)
+  const MIN_QUESTION_SECONDS = 5;
+  const [minTimeRemaining, setMinTimeRemaining] = useState<number>(MIN_QUESTION_SECONDS);
+  const [passedMinTimeQuestions, setPassedMinTimeQuestions] = useState<{ [questionId: string]: boolean }>({});
+  const [minTimeAlert, setMinTimeAlert] = useState<string | null>(null);
+
   // Listen for mobile tab-switching / app-minimizing
   useEffect(() => {
     let warningTimeout: NodeJS.Timeout;
@@ -224,6 +230,38 @@ export default function ExamWorkspacePage({
     return () => clearInterval(timer);
   }, [expectedEndAt, submitExam]);
 
+  // Per-Question Minimum Answering Timer (5 seconds per question)
+  useEffect(() => {
+    const currentQ = questions[currentIndex];
+    if (!currentQ) return;
+
+    if (passedMinTimeQuestions[currentQ.id] || lockedQuestions[currentQ.id]) {
+      setMinTimeRemaining(0);
+      return;
+    }
+
+    setMinTimeRemaining(MIN_QUESTION_SECONDS);
+    const interval = setInterval(() => {
+      setMinTimeRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setPassedMinTimeQuestions((passed) => ({ ...passed, [currentQ.id]: true }));
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentIndex, questions, passedMinTimeQuestions, lockedQuestions]);
+
+  // Auto-dismiss minimum time notification alert
+  useEffect(() => {
+    if (!minTimeAlert) return;
+    const t = setTimeout(() => setMinTimeAlert(null), 3500);
+    return () => clearTimeout(t);
+  }, [minTimeAlert]);
+
   // 4. Autosave Worker
   const flushPendingAnswers = useCallback(async () => {
     const pendingKeys = Object.keys(pendingSyncQueue.current);
@@ -280,8 +318,16 @@ export default function ExamWorkspacePage({
 
   // 6. Navigation and Locking Logic: When student moves away from an answered question, lock it!
   const navigateToQuestion = useCallback((targetIndex: number) => {
+    if (targetIndex === currentIndex) return;
+
     const currentQ = questions[currentIndex];
     if (currentQ) {
+      // Guard: enforce minimum time spent on question before moving to another question
+      if (minTimeRemaining > 0 && !passedMinTimeQuestions[currentQ.id] && !lockedQuestions[currentQ.id]) {
+        setMinTimeAlert(`Harap baca dan pahami soal minimal ${minTimeRemaining} detik lagi sebelum berpindah.`);
+        return;
+      }
+
       const currentAns = answers[currentQ.id];
       // If student has answered the current question and is now navigating away:
       if (currentAns && !lockedQuestions[currentQ.id]) {
@@ -319,7 +365,7 @@ export default function ExamWorkspacePage({
       }
     }
     setCurrentIndex(targetIndex);
-  }, [answers, currentIndex, examId, lockedQuestions, questions]);
+  }, [answers, currentIndex, examId, lockedQuestions, minTimeRemaining, passedMinTimeQuestions, questions]);
 
   const handleSelectOption = async (questionId: string, optionLetter: string) => {
     // If question is already locked, prevent modifying the answer!
@@ -558,17 +604,47 @@ export default function ExamWorkspacePage({
         </div>
       )}
 
+      {/* Minimum Answering Time Warning Toast */}
+      {minTimeAlert && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-slate-950 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black shadow-2xl flex items-center gap-2.5 max-w-md text-center border-2 border-amber-600 animate-in fade-in slide-in-from-top-2">
+          <Clock className="w-4 h-4 text-slate-950 shrink-0 animate-spin" />
+          <span className="flex-1">{minTimeAlert}</span>
+          <button
+            type="button"
+            onClick={() => setMinTimeAlert(null)}
+            className="p-1 rounded-full hover:bg-amber-600/30 text-slate-950 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Main Workspace Layout */}
       <main className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-28 lg:pb-8">
         {/* Left: Question Card (8 columns on desktop) */}
         <section className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/90 shadow-xs p-4 sm:p-8 flex flex-col justify-between min-h-[480px] sm:min-h-[520px]">
           <div>
             {/* Question Number & Status Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between pb-4 border-b border-slate-100 mb-6 gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="px-3 py-1 bg-blue-600 text-white font-black text-xs sm:text-sm rounded-lg shadow-xs">
                   SOAL NO. {currentQuestion.display_number}
                 </span>
+
+                {/* Minimum time indicator per question */}
+                {minTimeRemaining > 0 && !lockedQuestions[currentQuestion.id] && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-black animate-pulse">
+                    <Clock className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Min: {minTimeRemaining}s</span>
+                  </span>
+                )}
+                {minTimeRemaining === 0 && !lockedQuestions[currentQuestion.id] && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <span>Min Selesai</span>
+                  </span>
+                )}
+
                 {lockedQuestions[currentQuestion.id] ? (
                   <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-300 flex items-center gap-1">
                     <Lock className="w-3.5 h-3.5 text-amber-600" /> Terkunci ({selectedAnswer})
@@ -739,10 +815,20 @@ export default function ExamWorkspacePage({
                 <button
                   type="button"
                   onClick={handleLockCurrentQuestion}
-                  className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-xs hover:shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  disabled={minTimeRemaining > 0}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 disabled:from-slate-400 disabled:to-slate-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-xs hover:shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                 >
-                  <Lock className="w-4 h-4" />
-                  <span>KUNCI JAWABAN & BUKA PEMBAHASAN</span>
+                  {minTimeRemaining > 0 ? (
+                    <>
+                      <Clock className="w-4 h-4 animate-spin" />
+                      <span>BACA SOAL ({minTimeRemaining}S)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4" />
+                      <span>KUNCI JAWABAN & BUKA PEMBAHASAN</span>
+                    </>
+                  )}
                 </button>
               </div>
             )}
@@ -795,10 +881,20 @@ export default function ExamWorkspacePage({
               <button
                 type="button"
                 onClick={() => navigateToQuestion(Math.min(questions.length - 1, currentIndex + 1))}
-                className="h-12 min-w-[150px] px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                disabled={minTimeRemaining > 0 && !passedMinTimeQuestions[currentQuestion.id] && !lockedQuestions[currentQuestion.id]}
+                className="h-12 min-w-[150px] px-6 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
               >
-                <span>BERIKUTNYA</span>
-                <ChevronRight className="w-4 h-4" />
+                {minTimeRemaining > 0 && !passedMinTimeQuestions[currentQuestion.id] && !lockedQuestions[currentQuestion.id] ? (
+                  <>
+                    <Clock className="w-4 h-4" />
+                    <span>BACA ({minTimeRemaining}s)</span>
+                  </>
+                ) : (
+                  <>
+                    <span>BERIKUTNYA</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             ) : (
               <button
@@ -914,10 +1010,20 @@ export default function ExamWorkspacePage({
             <button
               type="button"
               onClick={() => navigateToQuestion(Math.min(questions.length - 1, currentIndex + 1))}
-              className="h-12 w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1 active:scale-98 cursor-pointer shadow-xs"
+              disabled={minTimeRemaining > 0 && !passedMinTimeQuestions[currentQuestion.id] && !lockedQuestions[currentQuestion.id]}
+              className="h-12 w-full rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold text-xs flex items-center justify-center gap-1 active:scale-98 cursor-pointer shadow-xs"
             >
-              <span>Lanjut</span>
-              <ChevronRight className="w-4 h-4" />
+              {minTimeRemaining > 0 && !passedMinTimeQuestions[currentQuestion.id] && !lockedQuestions[currentQuestion.id] ? (
+                <>
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>({minTimeRemaining}s)</span>
+                </>
+              ) : (
+                <>
+                  <span>Lanjut</span>
+                  <ChevronRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           ) : (
             <button

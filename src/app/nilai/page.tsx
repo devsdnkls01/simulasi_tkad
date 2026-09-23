@@ -18,7 +18,6 @@ import {
   Clock,
   Sparkles,
   Zap,
-  Flame,
   Star,
 } from 'lucide-react';
 
@@ -76,7 +75,8 @@ export default function PublicLeaderboardPage() {
     { id: 'gabungan', name: 'Gabungan TKA', icon: '🏆' },
   ];
 
-  const fetchLeaderboard = useCallback(async () => {
+  const fetchLeaderboard = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
       const queryParams = new URLSearchParams();
       if (selectedSubject !== 'all') {
@@ -113,8 +113,7 @@ export default function PublicLeaderboardPage() {
 
   // Initial fetch
   useEffect(() => {
-    setLoading(true);
-    fetchLeaderboard();
+    fetchLeaderboard(true);
   }, [fetchLeaderboard]);
 
   // Auto-refresh interval (10 seconds)
@@ -124,7 +123,7 @@ export default function PublicLeaderboardPage() {
     const interval = setInterval(() => {
       setRefreshCountdown((prev) => {
         if (prev <= 1) {
-          fetchLeaderboard();
+          fetchLeaderboard(false);
           return 10;
         }
         return prev - 1;
@@ -272,7 +271,6 @@ export default function PublicLeaderboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {podium.map((p, idx) => {
-                const isFirst = idx === 0;
                 const isSecond = idx === 1;
                 const isThird = idx === 2;
 
