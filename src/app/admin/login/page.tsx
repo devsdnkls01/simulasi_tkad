@@ -147,8 +147,10 @@ export default function AdminLoginPage() {
             <p className="text-xs text-slate-400">
               Akses terbatas khusus proktor, guru, dan operator sekolah SDN Kalisalak 01.
             </p>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
