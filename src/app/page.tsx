@@ -9,6 +9,7 @@ import {
   Lock,
   ChevronRight,
   GraduationCap,
+  Trophy,
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 
@@ -32,11 +33,11 @@ export default function HomePage() {
             </Link>
 
             <Link
-              href="/login"
-              className="h-10 px-4 sm:px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm transition-all shadow-xs hover:shadow-md active:scale-98 inline-flex items-center gap-2 cursor-pointer"
+              href="/nilai"
+              className="h-10 px-4 sm:px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs sm:text-sm transition-all shadow-xs hover:shadow-md active:scale-98 inline-flex items-center gap-2 cursor-pointer"
             >
-              <GraduationCap className="w-4 h-4" />
-              <span>Masuk Siswa</span>
+              <Trophy className="w-4 h-4 text-amber-300" />
+              <span>Lihat Peringkat</span>
             </Link>
           </div>
         </div>

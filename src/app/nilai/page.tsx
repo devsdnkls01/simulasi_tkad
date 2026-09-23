@@ -13,9 +13,7 @@ import {
   TrendingUp,
   Users,
   CheckCircle2,
-  Clock,
   Sparkles,
-  Zap,
   Star,
   Award,
   Crown,
@@ -110,10 +108,49 @@ export default function PublicLeaderboardPage() {
     }
   }, [selectedSubject, searchQuery]);
 
-  // Initial fetch
+  // Initial fetch with cleanup
   useEffect(() => {
-    fetchLeaderboard();
-  }, [fetchLeaderboard]);
+    let active = true;
+    async function load() {
+      try {
+        const queryParams = new URLSearchParams();
+        if (selectedSubject !== 'all') {
+          queryParams.set('subject', selectedSubject);
+        }
+        if (searchQuery.trim()) {
+          queryParams.set('search', searchQuery.trim());
+        }
+
+        const res = await fetch(`/api/public/leaderboard?${queryParams.toString()}`);
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (active && data.success) {
+          setResults(data.results || []);
+          setPodium(data.podium || []);
+          setStats(
+            data.stats || {
+              totalPeserta: 0,
+              highestScore: 0,
+              averageScore: 0,
+              tuntasCount: 0,
+              passingRate: 0,
+            }
+          );
+          setLastUpdated(new Date());
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Initial fetch error:', err);
+        if (active) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      active = false;
+    };
+  }, [selectedSubject, searchQuery]);
 
   // Auto-refresh interval (10 seconds)
   useEffect(() => {
