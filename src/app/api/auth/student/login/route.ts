@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
             { nisn: trimmedIdentifier },
             { nomor_peserta: trimmedIdentifier },
             { nis: trimmedIdentifier },
-            { nama_lengkap: { equals: trimmedIdentifier, mode: 'insensitive' } },
+            { nama_lengkap: trimmedIdentifier },
           ],
         },
       });

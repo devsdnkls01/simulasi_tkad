@@ -91,14 +91,16 @@ export default function StudentLoginPage() {
   useEffect(() => {
     if (selectedStudent) return; // already selected
     const query = searchQuery.trim();
-    if (query.length < 2) {
-      setSuggestions([]);
-      setShowDropdown(false);
-      return;
-    }
 
-    setIsSearching(true);
     const handler = setTimeout(async () => {
+      if (query.length < 2) {
+        setSuggestions([]);
+        setShowDropdown(false);
+        setIsSearching(false);
+        return;
+      }
+
+      setIsSearching(true);
       try {
         const res = await fetch(`/api/auth/student/search?q=${encodeURIComponent(query)}`);
         const data = await res.json();
