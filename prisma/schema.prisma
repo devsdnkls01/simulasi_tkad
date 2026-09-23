@@ -70,6 +70,7 @@ model Exam {
   exam_sessions ExamSession[]
   results       Result[]
 
+  @@index([status, kelas])
   @@map("exams")
 }
 
@@ -87,7 +88,7 @@ model ExamToken {
   exam        Exam     @relation(fields: [exam_id], references: [id], onDelete: Cascade)
 
   @@index([exam_id])
-  @@index([token_code])
+  @@index([token_code, status])
   @@map("exam_tokens")
 }
 
@@ -115,6 +116,7 @@ model Question {
   session_questions ExamSessionQuestion[]
   answers           Answer[]
 
+  @@index([exam_id, order_index])
   @@index([exam_id])
   @@index([question_number])
   @@map("questions")
@@ -140,6 +142,8 @@ model ExamSession {
   answers           Answer[]
   result            Result?
 
+  @@index([student_id, exam_id])
+  @@index([exam_id, status])
   @@index([exam_id])
   @@index([student_id])
   @@index([status])
@@ -175,6 +179,7 @@ model Answer {
   question    Question    @relation(fields: [question_id], references: [id], onDelete: Cascade)
 
   @@unique([session_id, question_id])
+  @@index([session_id, is_final])
   @@index([session_id])
   @@index([question_id])
   @@map("answers")

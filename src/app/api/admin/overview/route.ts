@@ -9,22 +9,26 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 1. Total Students
-    const totalStudents = await prisma.student.count();
-    const activeStudents = await prisma.student.count({ where: { status: 'ACTIVE' } });
-
-    // 2. Active Exam
-    const activeExam = await prisma.exam.findFirst({
-      where: { status: 'ACTIVE' },
-      include: {
-        tokens: {
-          where: { status: 'ACTIVE' },
-          orderBy: { created_at: 'desc' },
-          take: 1,
+    // Execute student count, active exam, and class breakdown in parallel
+    const [totalStudents, activeStudents, activeExam, studentsByClass] = await Promise.all([
+      prisma.student.count(),
+      prisma.student.count({ where: { status: 'ACTIVE' } }),
+      prisma.exam.findFirst({
+        where: { status: 'ACTIVE' },
+        include: {
+          tokens: {
+            where: { status: 'ACTIVE' },
+            orderBy: { created_at: 'desc' },
+            take: 1,
+          },
         },
-      },
-      orderBy: { created_at: 'desc' },
-    });
+        orderBy: { created_at: 'desc' },
+      }),
+      prisma.student.groupBy({
+        by: ['kelas'],
+        _count: { id: true },
+      }),
+    ]);
 
     let notStartedCount = 0;
     let inProgressCount = 0;
@@ -57,12 +61,6 @@ export async function GET() {
     } else {
       notStartedCount = activeStudents;
     }
-
-    // Breakdown per class
-    const studentsByClass = await prisma.student.groupBy({
-      by: ['kelas'],
-      _count: { id: true },
-    });
 
     return NextResponse.json({
       totalStudents,

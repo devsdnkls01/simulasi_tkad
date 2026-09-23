@@ -24,11 +24,17 @@ export async function POST(
       return NextResponse.json({ error: 'Jawaban tidak valid.' }, { status: 400 });
     }
 
-    // Find active session
+    // Find active session + existing answer in 1 single query
     const session = await prisma.examSession.findFirst({
       where: {
         exam_id: examId,
         student_id: studentSession.id,
+      },
+      include: {
+        answers: {
+          where: { question_id },
+          take: 1,
+        },
       },
     });
 
@@ -56,15 +62,7 @@ export async function POST(
       );
     }
 
-    // Check if this answer was already finalized / locked
-    const existingAnswer = await prisma.answer.findUnique({
-      where: {
-        session_id_question_id: {
-          session_id: session.id,
-          question_id,
-        },
-      },
-    });
+    const existingAnswer = session.answers[0];
 
     if (existingAnswer?.is_final && existingAnswer.answer && existingAnswer.answer !== sanitizedAnswer) {
       return NextResponse.json(
@@ -75,8 +73,8 @@ export async function POST(
 
     const markFinal = Boolean(is_final) || existingAnswer?.is_final || false;
 
-    // Save/Upsert answer atomically
-    await prisma.$transaction([
+    // Parallelize batch write and question explanation fetch
+    const [upsertResult, , qData] = await Promise.all([
       prisma.answer.upsert({
         where: {
           session_id_question_id: {
@@ -104,6 +102,12 @@ export async function POST(
           current_question: current_question ? Number(current_question) : session.current_question,
         },
       }),
+      markFinal
+        ? prisma.question.findUnique({
+            where: { id: question_id },
+            select: { explanation: true, correct_answer: true },
+          })
+        : Promise.resolve(null),
     ]);
 
     const remainingSeconds = Math.max(
@@ -111,23 +115,12 @@ export async function POST(
       Math.floor((new Date(session.expected_end_at).getTime() - now.getTime()) / 1000)
     );
 
-    let explanation: string | null = null;
-    let correctAnswer: string | null = null;
-    if (markFinal) {
-      const qData = await prisma.question.findUnique({
-        where: { id: question_id },
-        select: { explanation: true, correct_answer: true },
-      });
-      explanation = qData?.explanation || null;
-      correctAnswer = qData?.correct_answer || null;
-    }
-
     return NextResponse.json({
       success: true,
-      saved_answer: sanitizedAnswer,
+      saved_answer: upsertResult.answer,
       is_locked: markFinal,
-      explanation,
-      correct_answer: correctAnswer,
+      explanation: qData?.explanation || null,
+      correct_answer: qData?.correct_answer || null,
       server_time: now.toISOString(),
       remaining_seconds: remainingSeconds,
     });
