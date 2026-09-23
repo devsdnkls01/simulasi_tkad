@@ -3,11 +3,11 @@ import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'tka-simulasi-sd-secret-key-super-secure-token-2026'
+  process.env.JWT_SECRET || 'default-tka-jwt-secret-key-change-in-env'
 );
 
 const ADMIN_JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || 'tka-simulasi-sd-admin-secret-key-super-secure-2026'
+  process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET || 'default-tka-admin-jwt-secret-key-change-in-env'
 );
 
 export const STUDENT_COOKIE_NAME = 'tka_student_token';
