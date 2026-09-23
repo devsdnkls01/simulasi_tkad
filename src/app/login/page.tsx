@@ -160,9 +160,26 @@ export default function StudentLoginPage() {
         : selectedSubject.token;
 
     if (!selectedStudent && !searchQuery.trim()) {
-      setError('Harap ketik nama Anda dan pilih dari daftar siswa.');
+      setError('Wajib menggunakan & memilih Nama Lengkap resmi Anda dari daftar siswa.');
       searchInputRef.current?.focus();
       return;
+    }
+
+    if (!selectedStudent && searchQuery.trim()) {
+      if (suggestions.length === 0) {
+        setError('Nama tidak ditemukan. Wajib mengetik nama lengkap resmi Anda yang terdaftar.');
+        searchInputRef.current?.focus();
+        return;
+      }
+      if (suggestions.length > 1) {
+        setError('Ditemukan beberapa siswa. Wajib memilih salah satu Nama Lengkap resmi Anda dari daftar dropdown di bawah.');
+        setShowDropdown(true);
+        return;
+      }
+      if (suggestions.length === 1) {
+        // Auto-select single matching student
+        setSelectedStudent(suggestions[0]);
+      }
     }
 
     if (!effectiveToken) {
@@ -388,6 +405,12 @@ export default function StudentLoginPage() {
                 </span>
               </div>
 
+              {/* Notifikasi Wajib Nama Lengkap */}
+              <div className="mb-2 px-3 py-2 rounded-xl bg-blue-50/90 border border-blue-200/90 flex items-center gap-2 text-blue-900 text-[11px] font-semibold">
+                <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
+                <span>Wajib memilih <strong>Nama Lengkap resmi</strong> Anda dari daftar peserta.</span>
+              </div>
+
               {selectedStudent ? (
                 /* Selected Student Card */
                 <div className="p-3.5 bg-emerald-50/90 border-2 border-emerald-400 rounded-2xl flex items-center justify-between animate-in fade-in duration-150">
@@ -460,7 +483,7 @@ export default function StudentLoginPage() {
                       className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-100 animate-in fade-in duration-150"
                     >
                       <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                        Pilih Nama Anda ({suggestions.length} ditemukan)
+                        Pilih Nama Lengkap Anda ({suggestions.length} ditemukan)
                       </div>
                       {suggestions.map((st) => (
                         <button
@@ -495,13 +518,13 @@ export default function StudentLoginPage() {
                       ref={dropdownRef}
                       className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 text-center text-xs text-slate-500"
                     >
-                      Nama &quot;{searchQuery}&quot; tidak ditemukan. Coba ketik nama depan atau panggilan Anda.
+                      Nama &quot;{searchQuery}&quot; tidak ditemukan. Pastikan mengetik nama lengkap resmi Anda yang terdaftar.
                     </div>
                   )}
                 </div>
               )}
-              <p className="text-[10px] text-slate-400 font-medium mt-1">
-                Ketik nama panggilan atau nama lengkap, lalu klik nama Anda pada daftar yang muncul.
+              <p className="text-[10px] text-slate-500 font-medium mt-1">
+                Ketik nama Anda, lalu klik nama lengkap yang muncul di daftar pilihan untuk memulai ujian.
               </p>
             </div>
 
