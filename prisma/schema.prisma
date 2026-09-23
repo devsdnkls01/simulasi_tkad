@@ -1,0 +1,218 @@
+// Prisma Schema for Platform Simulasi TKA/TKAD Sekolah Dasar
+// SQLite Local Database (zero external server required)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id            String   @id @default(cuid())
+  nomor_peserta String   @unique
+  nama_lengkap  String
+  nis           String?
+  nisn          String?
+  kelas         String
+  rombel        String?
+  foto_url      String?
+  status        String   @default("ACTIVE")
+  password_hash String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  exam_sessions ExamSession[]
+  results       Result[]
+
+  @@index([nomor_peserta])
+  @@index([nisn])
+  @@index([kelas])
+  @@map("students")
+}
+
+model Admin {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  nama          String
+  password_hash String
+  role          String   @default("ADMIN")
+  status        String   @default("ACTIVE")
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("admins")
+}
+
+model Exam {
+  id                  String    @id @default(cuid())
+  kode_ujian          String    @unique
+  nama_ujian          String
+  deskripsi           String?
+  mata_pelajaran      String
+  kelas               String
+  tanggal_mulai       DateTime?
+  tanggal_selesai     DateTime?
+  durasi_menit        Int       @default(105)
+  jumlah_soal         Int       @default(40)
+  status              String    @default("DRAFT")
+  randomize_questions Boolean   @default(true)
+  randomize_options   Boolean   @default(true)
+  show_result         Boolean   @default(true)
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  tokens        ExamToken[]
+  questions     Question[]
+  exam_sessions ExamSession[]
+  results       Result[]
+
+  @@map("exams")
+}
+
+model ExamToken {
+  id          String   @id @default(cuid())
+  exam_id     String
+  token_code  String   // 5 digit token
+  token_hash  String?
+  status      String   @default("ACTIVE")
+  valid_from  DateTime @default(now())
+  valid_until DateTime
+  created_at  DateTime @default(now())
+  created_by  String?
+
+  exam        Exam     @relation(fields: [exam_id], references: [id], onDelete: Cascade)
+
+  @@index([exam_id])
+  @@index([token_code])
+  @@map("exam_tokens")
+}
+
+model Question {
+  id              String   @id @default(cuid())
+  exam_id         String
+  question_number Int
+  question_type   String   @default("MULTIPLE_CHOICE")
+  question_text   String
+  image_url       String?
+  audio_url       String?
+  option_a        String
+  option_b        String
+  option_c        String
+  option_d        String
+  correct_answer  String   // 'A', 'B', 'C', 'D' - NEVER SENT TO STUDENT DURING EXAM
+  explanation     String?  // Pembahasan & materi kunci untuk peningkatan akademik
+  topic           String?  // Topik / Bab materi pembelajaran
+  score           Float    @default(2.5)
+  order_index     Int      @default(0)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  exam              Exam                  @relation(fields: [exam_id], references: [id], onDelete: Cascade)
+  session_questions ExamSessionQuestion[]
+  answers           Answer[]
+
+  @@index([exam_id])
+  @@index([question_number])
+  @@map("questions")
+}
+
+model ExamSession {
+  id               String    @id @default(cuid())
+  exam_id          String
+  student_id       String
+  token_id         String?
+  started_at       DateTime  @default(now())
+  expected_end_at  DateTime
+  actual_end_at    DateTime?
+  last_activity_at DateTime  @default(now())
+  current_question Int       @default(1)
+  status           String    @default("NOT_STARTED")
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  exam              Exam                  @relation(fields: [exam_id], references: [id], onDelete: Cascade)
+  student           Student               @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  session_questions ExamSessionQuestion[]
+  answers           Answer[]
+  result            Result?
+
+  @@index([exam_id])
+  @@index([student_id])
+  @@index([status])
+  @@map("exam_sessions")
+}
+
+model ExamSessionQuestion {
+  id            String  @id @default(cuid())
+  session_id    String
+  question_id   String
+  display_order Int
+  option_order  String? // e.g. "A,B,C,D"
+
+  session       ExamSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  question      Question    @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@unique([session_id, question_id])
+  @@unique([session_id, display_order])
+  @@index([session_id])
+  @@map("exam_session_questions")
+}
+
+model Answer {
+  id          String   @id @default(cuid())
+  session_id  String
+  question_id String
+  answer      String?  // 'A', 'B', 'C', 'D'
+  is_final    Boolean  @default(false)
+  answered_at DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  session     ExamSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  question    Question    @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@unique([session_id, question_id])
+  @@index([session_id])
+  @@index([question_id])
+  @@map("answers")
+}
+
+model Result {
+  id              String   @id @default(cuid())
+  session_id      String   @unique
+  student_id      String
+  exam_id         String
+  total_questions Int
+  correct_answers Int
+  wrong_answers   Int
+  unanswered      Int
+  score           Float
+  started_at      DateTime
+  finished_at     DateTime
+  duration_used   Int      // in seconds
+  created_at      DateTime @default(now())
+
+  session         ExamSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  student         Student     @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  exam            Exam        @relation(fields: [exam_id], references: [id], onDelete: Cascade)
+
+  @@index([student_id])
+  @@index([exam_id])
+  @@map("results")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String   // LOGIN_SUCCESS, TOKEN_SUCCESS, EXAM_STARTED, etc.
+  user_type  String   // STUDENT, ADMIN, SYSTEM
+  user_id    String?
+  details    String?
+  ip_address String?
+  created_at DateTime @default(now())
+
+  @@index([action])
+  @@index([user_id])
+  @@map("audit_logs")
+}
