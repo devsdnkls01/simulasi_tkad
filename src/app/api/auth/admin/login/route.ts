@@ -7,26 +7,27 @@ export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
 
-    if (!email || !password) {
+    const identifier = email || (await req.json().catch(() => ({})))?.username;
+    if (!identifier || !password) {
       return NextResponse.json(
-        { error: 'Email dan password wajib diisi.' },
+        { error: 'Username dan password wajib diisi.' },
         { status: 400 }
       );
     }
 
-    const trimmedEmail = String(email).trim().toLowerCase();
+    const trimmedIdentifier = String(identifier).trim().toLowerCase();
     const admin = await prisma.admin.findUnique({
-      where: { email: trimmedEmail },
+      where: { email: trimmedIdentifier },
     });
 
     if (!admin || admin.status !== 'ACTIVE') {
       await logAudit({
         action: 'ADMIN_LOGIN_FAILED',
         userType: 'ADMIN',
-        details: `Gagal login admin dengan email: ${trimmedEmail}`,
+        details: `Gagal login admin dengan username/email: ${trimmedIdentifier}`,
       });
       return NextResponse.json(
-        { error: 'Email atau password administrator salah.' },
+        { error: 'Username atau password proktor/administrator salah.' },
         { status: 401 }
       );
     }
@@ -37,10 +38,10 @@ export async function POST(req: NextRequest) {
         action: 'ADMIN_LOGIN_FAILED',
         userType: 'ADMIN',
         userId: admin.id,
-        details: `Password admin salah untuk: ${trimmedEmail}`,
+        details: `Password salah untuk: ${trimmedIdentifier}`,
       });
       return NextResponse.json(
-        { error: 'Email atau password administrator salah.' },
+        { error: 'Username atau password proktor/administrator salah.' },
         { status: 401 }
       );
     }

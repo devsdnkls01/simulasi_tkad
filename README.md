@@ -36,10 +36,10 @@ Aplikasi ini dibangun mengacu penuh pada spesifikasi [blueprint.md](file:///b:/W
 
 ## Akun Pengujian (Testing Accounts)
 
-### 1. Akun Administrator
+### 1. Akun Proktor / Administrator
 - **URL**: `http://localhost:3000/admin/login`
-- **Email**: `admin@example.test`
-- **Password**: `Admin#TKA2026!`
+- **Username / ID Proktor**: `proktor.kalisalak1`
+- **Password**: `sdn01kalisalak`
 
 ### 2. Akun Siswa Pengujian
 - **URL**: `http://localhost:3000/login`

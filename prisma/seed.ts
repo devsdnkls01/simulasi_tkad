@@ -616,19 +616,21 @@ Garis-garis gaya magnet selalu mengalir keluar dari kutub Utara menuju ke kutub 
 async function main() {
   console.log('--- Memulai Seeding Bank Soal & Paket Ujian TKA SD ---');
 
-  // 1. Admin
-  const adminPw = await hashPassword('Admin#TKA2026!');
+  // 1. Admin / Proktor
+  const adminPw = await hashPassword('sdn01kalisalak');
+  // Clean up any legacy dummy admin
+  await prisma.admin.deleteMany({ where: { email: 'admin@example.test' } });
   await prisma.admin.upsert({
-    where: { email: 'admin@example.test' },
-    update: { password_hash: adminPw, nama: 'Administrator TKA SD' },
+    where: { email: 'proktor.kalisalak1' },
+    update: { password_hash: adminPw, nama: 'Proktor SDN Kalisalak 01' },
     create: {
-      email: 'admin@example.test',
+      email: 'proktor.kalisalak1',
       password_hash: adminPw,
-      nama: 'Administrator TKA SD',
+      nama: 'Proktor SDN Kalisalak 01',
       role: 'SUPERADMIN',
     },
   });
-  console.log('✓ Admin siap: admin@example.test');
+  console.log('✓ Proktor siap: proktor.kalisalak1');
 
   // 2. Students from datasiswa.md (Official 50 Students Kelas VI)
   const defaultStudentPw = await hashPassword('Siswa#2026!');

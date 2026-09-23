@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Lock, Mail, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { Lock, User, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function AdminLoginPage() {
     setError(null);
 
     if (!email || !password) {
-      setError('Email dan password wajib diisi.');
+      setError('Username dan password wajib diisi.');
       return;
     }
 
@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Email atau password administrator salah.');
+        setError(data.error || 'Username atau password salah.');
         return;
       }
 
@@ -69,7 +69,7 @@ export default function AdminLoginPage() {
         </div>
 
         <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          PORTAL ADMINISTRATOR
+          PORTAL PROKTOR & ADMIN
         </h2>
         <p className="mt-1 text-center text-xs sm:text-sm text-slate-400 font-medium">
           Pengelolaan & Monitoring Simulasi TKA SD
@@ -88,18 +88,18 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Email Administrator
+                Username / ID Proktor
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Mail className="w-5 h-5" />
+                  <User className="w-5 h-5" />
                 </div>
                 <input
                   id="email"
-                  type="email"
+                  type="text"
                   required
                   autoFocus
-                  placeholder="admin@example.test"
+                  placeholder="proktor.kalisalak1"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm font-medium placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
@@ -138,16 +138,15 @@ export default function AdminLoginPage() {
                   <span>Memverifikasi Akses...</span>
                 </>
               ) : (
-                'MASUK SEBAGAI ADMIN'
+                'MASUK SEBAGAI PROKTOR'
               )}
             </button>
           </form>
 
           <div className="mt-6 pt-6 border-t border-slate-700/60 text-center">
             <p className="text-xs text-slate-400">
-              Akses terbatas khusus guru dan operator sekolah resmi.
+              Akses terbatas khusus proktor, guru, dan operator sekolah SDN Kalisalak 01.
             </p>
-          </div>
         </div>
       </div>
     </div>
