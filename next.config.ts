@@ -6,6 +6,18 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/exam/:file([0-9]{4,6}_[a-f0-9]{32}\\.png)',
+        destination: '/soal-images/:file',
+      },
+      {
+        source: '/exam/:id/:file([0-9]{4,6}_[a-f0-9]{32}\\.png)',
+        destination: '/soal-images/:file',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

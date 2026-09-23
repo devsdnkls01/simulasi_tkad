@@ -110,11 +110,31 @@ export async function GET(
     const questions = sessionQuestions.map((sq) => {
       const q = sq.question;
       const isLocked = isFinalMap.get(q.id) || false;
+
+      let normalizedImg = q.image_url;
+      if (normalizedImg) {
+        if (normalizedImg.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(normalizedImg);
+            if (Array.isArray(parsed)) {
+              normalizedImg = JSON.stringify(
+                parsed.map((img: string) => {
+                  if (img.startsWith('http') || img.startsWith('/soal-images/')) return img;
+                  return `/soal-images/${img.replace(/^\/+/, '').replace(/^soal-images\//, '')}`;
+                })
+              );
+            }
+          } catch {}
+        } else if (!normalizedImg.startsWith('http') && !normalizedImg.startsWith('/soal-images/')) {
+          normalizedImg = `/soal-images/${normalizedImg.replace(/^\/+/, '').replace(/^soal-images\//, '')}`;
+        }
+      }
+
       return {
         id: q.id,
         display_number: sq.display_order,
         question_text: q.question_text,
-        image_url: q.image_url,
+        image_url: normalizedImg,
         audio_url: q.audio_url,
         option_a: q.option_a,
         option_b: q.option_b,
