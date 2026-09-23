@@ -37,6 +37,27 @@ export async function POST(
     const isPastTime = now >= new Date(session.expected_end_at);
     const reason = autoExpired || isPastTime ? 'TIME_EXPIRED' : 'SUBMITTED';
 
+    // Strict validation: if manual submission, all questions MUST be answered
+    if (!autoExpired && !isPastTime) {
+      const totalCount = await prisma.examSessionQuestion.count({
+        where: { session_id: session.id },
+      });
+      const answeredCount = await prisma.answer.count({
+        where: { session_id: session.id, answer: { not: null } },
+      });
+
+      if (answeredCount < totalCount) {
+        const remaining = totalCount - answeredCount;
+        return NextResponse.json(
+          {
+            error: `Ujian belum dapat dikumpulkan. Masih terdapat ${remaining} butir soal yang belum dijawab. Anda wajib menyelesaikan seluruh soal terlebih dahulu!`,
+            unansweredCount: remaining,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Calculate score & finalize in database transaction
     const result = await finalizeExamSession(session.id, reason);
 

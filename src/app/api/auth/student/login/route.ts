@@ -104,9 +104,38 @@ export async function POST(req: NextRequest) {
       details: `Peserta ${student.nama_lengkap} (NISN: ${student.nisn || '-'}, No: ${student.nomor_peserta}) berhasil login ${matchedExam ? `dengan token ${trimmedToken} untuk ${matchedExam.nama_ujian}` : 'ke dashboard'}.`,
     });
 
-    const redirectUrl = matchedExam && matchedTokenRecord
+    // Check if student has an active ongoing exam session that MUST be finished first
+    const ongoingSession = await prisma.examSession.findFirst({
+      where: {
+        student_id: student.id,
+        status: { in: ['IN_PROGRESS', 'PAUSED'] },
+      },
+      include: {
+        exam: true,
+      },
+    });
+
+    let redirectUrl = matchedExam && matchedTokenRecord
       ? `/exam/${matchedExam.id}/instructions?tokenId=${matchedTokenRecord.id}`
       : '/dashboard';
+
+    let activeExamInfo = matchedExam
+      ? {
+          id: matchedExam.id,
+          kode_ujian: matchedExam.kode_ujian,
+          nama_ujian: matchedExam.nama_ujian,
+        }
+      : null;
+
+    if (ongoingSession && ongoingSession.exam) {
+      // Direct student back to their ongoing exam immediately
+      redirectUrl = `/exam/${ongoingSession.exam_id}`;
+      activeExamInfo = {
+        id: ongoingSession.exam.id,
+        kode_ujian: ongoingSession.exam.kode_ujian,
+        nama_ujian: ongoingSession.exam.nama_ujian,
+      };
+    }
 
     const response = NextResponse.json({
       success: true,
@@ -120,14 +149,9 @@ export async function POST(req: NextRequest) {
         nis: student.nis,
         foto_url: student.foto_url,
       },
-      exam: matchedExam
-        ? {
-            id: matchedExam.id,
-            kode_ujian: matchedExam.kode_ujian,
-            nama_ujian: matchedExam.nama_ujian,
-          }
-        : null,
+      exam: activeExamInfo,
       redirectUrl,
+      hasOngoingSession: Boolean(ongoingSession),
     });
 
     response.cookies.set({

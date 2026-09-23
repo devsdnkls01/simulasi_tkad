@@ -19,6 +19,9 @@ import {
   ZoomIn,
   BookOpen,
   Sparkles,
+  Pause,
+  Play,
+  Coffee,
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 import { playCorrectSound, playWrongSound, triggerCelebration } from '@/lib/audioAndEffects';
@@ -90,6 +93,10 @@ export default function ExamWorkspacePage({
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
   const [tabSwitchWarning, setTabSwitchWarning] = useState(false);
 
+  // Pause Exam State
+  const [isPaused, setIsPaused] = useState(false);
+  const [pauseLoading, setPauseLoading] = useState(false);
+
   // Auto-submit guard
   const hasAutoSubmitted = useRef(false);
 
@@ -135,6 +142,10 @@ export default function ExamWorkspacePage({
         }
 
         setQuestions(data.questions || []);
+
+        if (data.status === 'PAUSED') {
+          setIsPaused(true);
+        }
 
         // Populate initial answers and locked status
         const initialAnswers: { [key: string]: string } = {};
@@ -194,9 +205,14 @@ export default function ExamWorkspacePage({
           body: JSON.stringify({ autoExpired }),
         });
 
-        if (res.ok) {
-          router.push(`/exam/${examId}/result`);
-        } else {
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error || 'Gagal mengumpulkan lembar ujian.');
+          setSubmitting(false);
+          return;
+        }
+
+        if (data.success) {
           router.push(`/exam/${examId}/result`);
         }
       } catch (err) {
@@ -210,9 +226,52 @@ export default function ExamWorkspacePage({
     [examId, router, submitting]
   );
 
+  // Toggle Pause/Resume handler
+  const handleTogglePause = async (forcePause?: boolean) => {
+    setPauseLoading(true);
+    try {
+      const nextAction =
+        forcePause !== undefined
+          ? forcePause
+            ? 'pause'
+            : 'resume'
+          : isPaused
+          ? 'resume'
+          : 'pause';
+
+      const res = await fetch(`/api/exams/${examId}/pause`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: nextAction }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Gagal mengubah status jeda ujian.');
+        return;
+      }
+
+      if (nextAction === 'pause') {
+        setIsPaused(true);
+      } else {
+        setIsPaused(false);
+        if (data.expected_end_at) {
+          setExpectedEndAt(new Date(data.expected_end_at));
+        }
+        if (data.remaining_seconds !== undefined) {
+          setRemainingSeconds(data.remaining_seconds);
+        }
+      }
+    } catch (err) {
+      console.error('Pause error:', err);
+    } finally {
+      setPauseLoading(false);
+    }
+  };
+
   // 3. Countdown Timer Interval (Authoritative based on expectedEndAt)
   useEffect(() => {
-    if (!expectedEndAt) return;
+    if (!expectedEndAt || isPaused) return;
 
     const timer = setInterval(() => {
       const diff = Math.max(
@@ -228,7 +287,7 @@ export default function ExamWorkspacePage({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [expectedEndAt, submitExam]);
+  }, [expectedEndAt, isPaused, submitExam]);
 
   // Per-Question Minimum Answering Timer (5 seconds per question)
   useEffect(() => {
@@ -581,6 +640,22 @@ export default function ExamWorkspacePage({
               <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-current shrink-0" />
               <span>{formatTimer(remainingSeconds)}</span>
             </div>
+
+            {/* Pause Button */}
+            <button
+              type="button"
+              onClick={() => handleTogglePause(true)}
+              disabled={pauseLoading}
+              className="h-10 px-3 sm:px-3.5 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
+              title="Jeda Ujian Sementara"
+            >
+              {pauseLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Pause className="w-4 h-4 fill-current" />
+              )}
+              <span className="hidden sm:inline">JEDA</span>
+            </button>
 
             {/* Finish Button */}
             <button
@@ -1127,6 +1202,70 @@ export default function ExamWorkspacePage({
         </div>
       )}
 
+      {/* Fullscreen Pause Overlay Modal */}
+      {isPaused && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border-2 border-amber-300 text-center space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+              <Coffee className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-full text-xs font-black">
+                <Pause className="w-3.5 h-3.5 fill-current" />
+                <span>UJIAN SEDANG DIJEDA</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+                Waktu Ujian Berhenti Sementara
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
+                Silakan istirahat atau selesaikan urusan rumah terlebih dahulu (misal makan / dipanggil orang tua). Seluruh jawaban Anda tetap aman tersimpan di sistem.
+              </p>
+            </div>
+
+            {/* Info Box */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-2 text-xs">
+              <div className="flex justify-between items-center text-slate-700">
+                <span className="font-semibold">Soal Terakhir Aktif:</span>
+                <span className="font-black text-blue-700">Nomor {currentIndex + 1}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-700">
+                <span className="font-semibold">Sisa Waktu Ujian:</span>
+                <span className="font-mono font-black text-amber-800">{formatTimer(remainingSeconds)}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-700">
+                <span className="font-semibold">Status Progres:</span>
+                <span className="font-bold text-emerald-700">{answeredCount} dari {questions.length} Terjawab</span>
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <button
+              type="button"
+              onClick={() => handleTogglePause(false)}
+              disabled={pauseLoading}
+              className="w-full py-3.5 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-sm sm:text-base rounded-2xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+            >
+              {pauseLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Memulai Kembali...</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-5 h-5 fill-current" />
+                  <span>LANJUTKAN MENGERJAKAN SEKARANG</span>
+                </>
+              )}
+            </button>
+
+            <p className="text-[11px] text-slate-400 font-medium">
+              Klik tombol di atas untuk membuka kembali lembar soal dan melanjutkan perhitungan waktu.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Confirmation Modal (Bagian Z) */}
       {showSubmitModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-xs flex items-center justify-center p-4">
@@ -1134,54 +1273,96 @@ export default function ExamWorkspacePage({
             <h3 className="text-xl font-black text-slate-900 mb-2">
               Konfirmasi Selesai Ujian
             </h3>
-            <p className="text-sm text-slate-600 mb-4">
-              Apakah Anda yakin ingin mengakhiri dan mengumpulkan lembar jawaban ujian ini?
-            </p>
 
             {/* Answered vs Unanswered summary */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 mb-6">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 mb-4">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600 font-medium">Soal Sudah Dijawab:</span>
                 <span className="font-bold text-emerald-700">{answeredCount} Soal</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600 font-medium">Soal Belum Dijawab:</span>
-                <span className={`font-bold ${unansweredCount > 0 ? 'text-amber-700' : 'text-slate-700'}`}>
+                <span className={`font-bold ${unansweredCount > 0 ? 'text-rose-700' : 'text-slate-700'}`}>
                   {unansweredCount} Soal
                 </span>
               </div>
-              {unansweredCount > 0 && (
-                <p className="text-xs text-amber-800 pt-1 font-semibold">
-                  * Masih ada {unansweredCount} butir soal yang kosong. Anda masih bisa memeriksanya kembali.
-                </p>
-              )}
             </div>
 
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setShowSubmitModal(false)}
-                disabled={submitting}
-                className="flex-1 h-12 rounded-xl border-2 border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-center active:scale-98"
-              >
-                KEMBALI
-              </button>
-              <button
-                type="button"
-                onClick={() => submitExam(false)}
-                disabled={submitting}
-                className="flex-1 h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-all shadow-xs hover:shadow-md disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Menyelesaikan...</span>
-                  </>
-                ) : (
-                  'YA, SELESAIKAN'
-                )}
-              </button>
-            </div>
+            {unansweredCount > 0 ? (
+              <div className="space-y-4">
+                <div className="p-3.5 bg-rose-50 border-2 border-rose-300 rounded-xl text-xs text-rose-900 space-y-1 font-semibold">
+                  <div className="flex items-center gap-1.5 text-rose-700 font-black text-sm">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>Belum Bisa Mengumpulkan!</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    Anda wajib menjawab <strong>seluruh {questions.length} butir soal</strong> hingga tuntas sebelum dapat mengumpulkan ujian ini. Masih ada <strong>{unansweredCount} soal</strong> yang belum terisi.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowSubmitModal(false)}
+                    className="flex-1 h-12 rounded-xl border-2 border-slate-200 text-slate-700 font-bold text-xs sm:text-sm hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-center active:scale-98"
+                  >
+                    KEMBALI
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const firstUnansweredIdx = questions.findIndex((q) => !answers[q.id]);
+                      if (firstUnansweredIdx !== -1) {
+                        navigateToQuestion(firstUnansweredIdx);
+                      }
+                      setShowSubmitModal(false);
+                    }}
+                    className="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
+                  >
+                    <span>ISI SOAL KOSONG</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-900 space-y-1 font-semibold">
+                  <div className="flex items-center gap-1.5 text-emerald-700 font-black text-sm">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>Luar Biasa! Semua Soal Terjawab</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    Seluruh {questions.length} butir soal telah berhasil Anda jawab. Apakah Anda yakin ingin mengakhiri dan mengumpulkan ujian sekarang?
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowSubmitModal(false)}
+                    disabled={submitting}
+                    className="flex-1 h-12 rounded-xl border-2 border-slate-200 text-slate-700 font-bold text-xs sm:text-sm hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-center active:scale-98"
+                  >
+                    PERIKSA LAGI
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => submitExam(false)}
+                    disabled={submitting}
+                    className="flex-1 h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm transition-all shadow-xs hover:shadow-md disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Mengumpulkan...</span>
+                      </>
+                    ) : (
+                      'YA, KUMPULKAN'
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

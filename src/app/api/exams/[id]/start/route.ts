@@ -36,6 +36,29 @@ export async function POST(
       return NextResponse.json({ error: 'Ujian tidak aktif.' }, { status: 400 });
     }
 
+    // Check if student has an ongoing session on ANOTHER exam that must be completed first
+    const otherOngoingSession = await prisma.examSession.findFirst({
+      where: {
+        student_id: student.id,
+        status: { in: ['IN_PROGRESS', 'PAUSED'] },
+        exam_id: { not: examId },
+      },
+      include: {
+        exam: true,
+      },
+    });
+
+    if (otherOngoingSession) {
+      return NextResponse.json(
+        {
+          error: `Anda masih memiliki ujian "${otherOngoingSession.exam.nama_ujian}" yang sedang berlangsung. Anda wajib menyelesaikan ujian tersebut terlebih dahulu sebelum berpindah ke mata pelajaran lain!`,
+          activeExamId: otherOngoingSession.exam_id,
+          hasActiveOtherExam: true,
+        },
+        { status: 400 }
+      );
+    }
+
     // Check if an existing session already exists for this student & exam
     const existingSession = await prisma.examSession.findFirst({
       where: {
