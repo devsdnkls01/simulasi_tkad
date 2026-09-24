@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       );
 
       // Find best session by highest score (if tied, latest completed)
-      let bestSession = completedSessions.length > 0
+      const bestSession = completedSessions.length > 0
         ? completedSessions.reduce((prev, curr) => {
             const prevScore = prev.result?.score ?? -1;
             const currScore = curr.result?.score ?? -1;
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
       let progress = `0/${targetExam.jumlah_soal}`;
       let remainingSeconds = 0;
       let startedAt: string | null = null;
-      let score: number | null = bestSession?.result?.score ?? null;
+      const score: number | null = bestSession?.result?.score ?? null;
 
       if (activeSession) {
         if (now >= new Date(activeSession.expected_end_at)) {
