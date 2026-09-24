@@ -264,7 +264,7 @@ export default function StudentDashboardPage() {
                           </span>
                           {exam.score !== null && (
                             <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-800 font-bold text-xs border border-blue-200">
-                              Nilai Terakhir: {exam.score}
+                              Nilai Tertinggi: {exam.score}
                             </span>
                           )}
                         </>

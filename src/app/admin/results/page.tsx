@@ -23,6 +23,7 @@ interface ResultRow {
   score: number | null;
   progress: string;
   startedAt: string | null;
+  totalAttempts?: number;
 }
 
 export default function AdminResultsPage() {
@@ -193,8 +194,8 @@ export default function AdminResultsPage() {
                 <th className="py-3 px-4">NAMA SISWA</th>
                 <th className="py-3 px-4">KELAS</th>
                 <th className="py-3 px-4">STATUS</th>
-                <th className="py-3 px-4">PROGRES</th>
-                <th className="py-3 px-4 text-center">SKOR AKHIR</th>
+                <th className="py-3 px-4 text-center">PERCOBAAN</th>
+                <th className="py-3 px-4 text-center">NILAI TERTINGGI</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -241,12 +242,12 @@ export default function AdminResultsPage() {
                         </span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 font-medium text-slate-600 font-mono">
-                      {r.progress}
+                    <td className="py-3.5 px-4 text-center font-mono font-semibold text-slate-700">
+                      {r.totalAttempts ? `${r.totalAttempts}x` : '0x'}
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       {r.score !== null ? (
-                        <span className="px-3 py-1 rounded-xl bg-blue-50 text-blue-900 font-black text-sm font-mono border border-blue-100">
+                        <span className="px-3.5 py-1 rounded-xl bg-blue-50 text-blue-900 font-black text-sm font-mono border border-blue-200 shadow-2xs">
                           {r.score}
                         </span>
                       ) : (

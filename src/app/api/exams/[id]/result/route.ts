@@ -71,6 +71,18 @@ export async function GET(
       };
     });
 
+    // Fetch all student's results for this exam to calculate highest score
+    const allResults = await prisma.result.findMany({
+      where: {
+        exam_id: examId,
+        student_id: studentSession.id,
+      },
+      select: { score: true, finished_at: true },
+      orderBy: { score: 'desc' },
+    });
+
+    const highestScore = allResults.length > 0 ? allResults[0].score : session.result.score;
+
     return NextResponse.json({
       success: true,
       show_result: session.exam.show_result,
@@ -83,6 +95,8 @@ export async function GET(
         nama_ujian: session.exam.nama_ujian,
         mata_pelajaran: session.exam.mata_pelajaran,
       },
+      highest_score: highestScore,
+      total_attempts: allResults.length,
       result: session.exam.show_result
         ? {
             total_questions: session.result.total_questions,
@@ -90,6 +104,7 @@ export async function GET(
             wrong_answers: session.result.wrong_answers,
             unanswered: session.result.unanswered,
             score: session.result.score,
+            highest_score: highestScore,
             duration_used: session.result.duration_used,
             finished_at: session.result.finished_at,
           }

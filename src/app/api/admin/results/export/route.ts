@@ -25,33 +25,69 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Ujian tidak ditemukan.' }, { status: 404 });
     }
 
-    // Fetch all sessions & results for this exam
-    const sessions = await prisma.examSession.findMany({
-      where: { exam_id: targetExam.id },
-      include: {
-        student: true,
-        result: true,
+    // Fetch all active students for this exam's class to guarantee 1 unique row per student
+    const students = await prisma.student.findMany({
+      where: {
+        kelas: targetExam.kelas,
+        status: 'ACTIVE',
       },
-      orderBy: { student: { nomor_peserta: 'asc' } },
+      include: {
+        exam_sessions: {
+          where: { exam_id: targetExam.id },
+          include: {
+            result: true,
+          },
+          orderBy: { created_at: 'desc' },
+        },
+      },
+      orderBy: { nomor_peserta: 'asc' },
     });
 
-    const rows = sessions.map((sess, index) => {
-      const res = sess.result;
+    const rows = students.map((student, index) => {
+      const completedSessions = student.exam_sessions.filter((s) => s.result !== null);
+      const activeSession = student.exam_sessions.find(
+        (s) => s.status === 'IN_PROGRESS' || s.status === 'PAUSED'
+      );
+
+      // Best session by highest score
+      const bestSession =
+        completedSessions.length > 0
+          ? completedSessions.reduce((prev, curr) => {
+              const prevScore = prev.result?.score ?? -1;
+              const currScore = curr.result?.score ?? -1;
+              return currScore >= prevScore ? curr : prev;
+            })
+          : null;
+
+      const latestSession = student.exam_sessions[0] || null;
+      const res = bestSession?.result;
+
+      let status = 'BELUM_MULAI';
+      if (activeSession) {
+        status = 'MENGERJAKAN';
+      } else if (bestSession) {
+        status = 'SELESAI';
+      } else if (latestSession) {
+        status = latestSession.status;
+      }
+
       return {
         No: index + 1,
-        'Nomor Peserta': sess.student.nomor_peserta,
-        Nama: sess.student.nama_lengkap,
-        Kelas: sess.student.kelas,
-        Rombel: sess.student.rombel || '-',
+        'Nomor Peserta': student.nomor_peserta,
+        Nama: student.nama_lengkap,
+        Kelas: student.kelas,
+        Rombel: student.rombel || '-',
         'Jumlah Soal': res?.total_questions ?? targetExam.jumlah_soal,
         Benar: res?.correct_answers ?? 0,
         Salah: res?.wrong_answers ?? 0,
-        Kosong: res?.unanswered ?? 0,
-        Nilai: res?.score ?? 0,
-        'Waktu Mulai': sess.started_at ? new Date(sess.started_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-',
-        'Waktu Selesai': sess.actual_end_at ? new Date(sess.actual_end_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-',
+        Kosong: res?.unanswered ?? (res ? 0 : targetExam.jumlah_soal),
+        'Nilai Tertinggi': res?.score ?? 0,
+        'Total Percobaan': student.exam_sessions.length,
+        'Waktu Selesai': bestSession?.actual_end_at
+          ? new Date(bestSession.actual_end_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
+          : '-',
         'Durasi (Menit)': res?.duration_used ? Math.ceil(res.duration_used / 60) : '-',
-        Status: sess.status,
+        Status: status,
       };
     });
 

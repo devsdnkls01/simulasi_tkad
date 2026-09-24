@@ -44,12 +44,15 @@ interface ResultData {
     nama_ujian: string;
     mata_pelajaran: string;
   };
+  highest_score?: number;
+  total_attempts?: number;
   result: {
     total_questions: number;
     correct_answers: number;
     wrong_answers: number;
     unanswered: number;
     score: number;
+    highest_score?: number;
     duration_used: number;
     finished_at: string;
   } | null;
@@ -206,14 +209,24 @@ export default function ExamResultPage({
           {/* Score Highlight Box */}
           {data.show_result && data.result ? (
             <>
-              <div className="text-center py-6 bg-gradient-to-b from-blue-50/70 via-sky-50/40 to-slate-50 rounded-2xl border border-blue-100 space-y-1">
+              <div className="text-center py-6 bg-gradient-to-b from-blue-50/70 via-sky-50/40 to-slate-50 rounded-2xl border border-blue-100 space-y-2">
                 <p className="text-xs font-bold text-blue-700 uppercase tracking-wider">
                   NILAI CAPAIAN AKADEMIK
                 </p>
                 <div className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight">
                   {data.result.score}
                 </div>
-                <p className="text-xs text-slate-500 font-medium">
+                
+                {data.highest_score !== undefined && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-black border border-amber-300">
+                    <span>🏆 Nilai Tertinggi Resmi: {data.highest_score}</span>
+                    {data.total_attempts && data.total_attempts > 1 && (
+                      <span className="text-amber-700 font-semibold">• (Percobaan Ke-{data.total_attempts})</span>
+                    )}
+                  </div>
+                )}
+
+                <p className="text-xs text-slate-500 font-medium pt-1">
                   {data.result.score >= 80 ? '🎉 Luar Biasa! Pemahaman materi sangat mantap.' : data.result.score >= 60 ? '👍 Bagus! Terus tingkatkan pada materi yang salah.' : '💪 Tetap Semangat! Pelajari pembahasan dan modul belajar di bawah ini.'}
                 </p>
               </div>

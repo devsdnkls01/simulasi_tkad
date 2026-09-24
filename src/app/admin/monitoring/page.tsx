@@ -214,7 +214,7 @@ export default function AdminMonitoringPage() {
                 <th className="py-3 px-4">STATUS</th>
                 <th className="py-3 px-4">PROGRES</th>
                 <th className="py-3 px-4">SISA WAKTU</th>
-                <th className="py-3 px-4 text-center">NILAI</th>
+                <th className="py-3 px-4 text-center">SKOR TERTINGGI</th>
                 <th className="py-3 px-4 text-right">AKSI</th>
               </tr>
             </thead>

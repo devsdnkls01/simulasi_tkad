@@ -36,27 +36,42 @@ export async function GET() {
     let averageScore = 0;
 
     if (activeExam) {
-      const sessions = await prisma.examSession.findMany({
-        where: { exam_id: activeExam.id },
-        select: {
-          status: true,
-          result: { select: { score: true } },
+      const examStudents = await prisma.student.findMany({
+        where: { kelas: activeExam.kelas, status: 'ACTIVE' },
+        include: {
+          exam_sessions: {
+            where: { exam_id: activeExam.id },
+            include: {
+              result: { select: { score: true } },
+            },
+          },
         },
       });
 
-      inProgressCount = sessions.filter((s) => s.status === 'IN_PROGRESS').length;
-      finishedCount = sessions.filter(
-        (s) => s.status === 'SUBMITTED' || s.status === 'TIME_EXPIRED'
-      ).length;
-      notStartedCount = Math.max(0, activeStudents - sessions.length);
+      const highestScores: number[] = [];
 
-      const scoredResults = sessions
-        .map((s) => s.result?.score)
-        .filter((sc): sc is number => typeof sc === 'number');
+      for (const st of examStudents) {
+        const hasActive = st.exam_sessions.some(
+          (s) => s.status === 'IN_PROGRESS' || s.status === 'PAUSED'
+        );
+        const completedWithResults = st.exam_sessions
+          .map((s) => s.result?.score)
+          .filter((sc): sc is number => typeof sc === 'number');
 
-      if (scoredResults.length > 0) {
-        const sum = scoredResults.reduce((acc, curr) => acc + curr, 0);
-        averageScore = Number((sum / scoredResults.length).toFixed(1));
+        if (completedWithResults.length > 0) {
+          finishedCount++;
+          const maxStudentScore = Math.max(...completedWithResults);
+          highestScores.push(maxStudentScore);
+        } else if (hasActive) {
+          inProgressCount++;
+        } else {
+          notStartedCount++;
+        }
+      }
+
+      if (highestScores.length > 0) {
+        const sum = highestScores.reduce((acc, curr) => acc + curr, 0);
+        averageScore = Number((sum / highestScores.length).toFixed(1));
       }
     } else {
       notStartedCount = activeStudents;

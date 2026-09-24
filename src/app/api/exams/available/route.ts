@@ -54,30 +54,36 @@ export async function GET() {
       },
     });
 
-    const sessionByExam = new Map<string, (typeof existingSessions)[0]>();
+    // Group sessions by exam to find active session, latest session, and highest score
+    const sessionsByExamId = new Map<string, typeof existingSessions>();
     for (const s of existingSessions) {
-      if (!sessionByExam.has(s.exam_id)) {
-        sessionByExam.set(s.exam_id, s);
-      } else {
-        const current = sessionByExam.get(s.exam_id)!;
-        if (
-          current.status !== 'IN_PROGRESS' &&
-          current.status !== 'PAUSED' &&
-          (s.status === 'IN_PROGRESS' || s.status === 'PAUSED')
-        ) {
-          sessionByExam.set(s.exam_id, s);
-        }
-      }
+      const list = sessionsByExamId.get(s.exam_id) || [];
+      list.push(s);
+      sessionsByExamId.set(s.exam_id, list);
     }
 
     const enrichedExams = exams.map((exam) => {
-      const sess = sessionByExam.get(exam.id);
+      const studentSessions = sessionsByExamId.get(exam.id) || [];
+      const activeSession = studentSessions.find(
+        (s) => s.status === 'IN_PROGRESS' || s.status === 'PAUSED'
+      );
+      const completedScores = studentSessions
+        .map((s) => s.result?.score)
+        .filter((sc): sc is number => typeof sc === 'number');
+
+      const highestScore =
+        completedScores.length > 0 ? Math.max(...completedScores) : null;
+      const latestSession = studentSessions[0] || null;
+      const primarySession = activeSession || latestSession;
+
       return {
         ...exam,
-        session_status: sess ? sess.status : 'NOT_STARTED',
-        session_id: sess?.id || null,
-        has_result: !!sess?.result,
-        score: sess?.result?.score ?? null,
+        session_status: primarySession ? primarySession.status : 'NOT_STARTED',
+        session_id: primarySession?.id || null,
+        has_result: completedScores.length > 0,
+        score: highestScore, // Always return highest score
+        highest_score: highestScore,
+        total_attempts: studentSessions.length,
       };
     });
 
