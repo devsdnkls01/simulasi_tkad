@@ -57,21 +57,7 @@ export async function POST(
       );
     }
 
-    // Check if student has already completed the exam
-    const completedSession = await prisma.examSession.findFirst({
-      where: {
-        exam_id: examId,
-        student_id: student.id,
-        status: { in: ['SUBMITTED', 'TIME_EXPIRED'] },
-      },
-    });
-
-    if (completedSession) {
-      return NextResponse.json(
-        { error: 'Anda sudah menyelesaikan ujian ini.' },
-        { status: 400 }
-      );
-    }
+    // Allow unlimited attempts - no restriction on completed sessions
 
     // Validate 5 digit token from exam_tokens table
     const now = new Date();

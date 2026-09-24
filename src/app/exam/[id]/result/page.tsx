@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronUp,
   Lightbulb,
+  RotateCcw,
 } from 'lucide-react';
 
 interface QuestionReviewItem {
@@ -269,13 +270,21 @@ export default function ExamResultPage({
           )}
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="h-12 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>Coba Lagi Ujian Ini</span>
+            </button>
+
             <button
               onClick={() => router.push('/materi')}
               className="h-12 px-4 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold rounded-xl text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
             >
               <BookOpen className="w-4 h-4" />
-              <span>Buka Ruang Belajar & Modul</span>
+              <span>Buka Modul Belajar</span>
             </button>
 
             <button
@@ -283,7 +292,7 @@ export default function ExamResultPage({
               className="h-12 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Kembali ke Dashboard</span>
+              <span>Ke Dashboard</span>
             </button>
           </div>
         </div>

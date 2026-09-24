@@ -17,12 +17,13 @@ export async function POST(
     const body = await req.json().catch(() => ({}));
     const autoExpired = body.autoExpired === true;
 
-    // Find student's session
+    // Find student's session (most recent)
     const session = await prisma.examSession.findFirst({
       where: {
         exam_id: examId,
         student_id: studentSession.id,
       },
+      orderBy: { created_at: 'desc' },
       include: {
         exam: true,
       },

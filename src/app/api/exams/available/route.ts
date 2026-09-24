@@ -44,6 +44,7 @@ export async function GET() {
         student_id: student.id,
         exam_id: { in: examIds },
       },
+      orderBy: { created_at: 'desc' },
       include: {
         result: {
           select: {
@@ -53,7 +54,21 @@ export async function GET() {
       },
     });
 
-    const sessionByExam = new Map(existingSessions.map((s) => [s.exam_id, s]));
+    const sessionByExam = new Map<string, (typeof existingSessions)[0]>();
+    for (const s of existingSessions) {
+      if (!sessionByExam.has(s.exam_id)) {
+        sessionByExam.set(s.exam_id, s);
+      } else {
+        const current = sessionByExam.get(s.exam_id)!;
+        if (
+          current.status !== 'IN_PROGRESS' &&
+          current.status !== 'PAUSED' &&
+          (s.status === 'IN_PROGRESS' || s.status === 'PAUSED')
+        ) {
+          sessionByExam.set(s.exam_id, s);
+        }
+      }
+    }
 
     const enrichedExams = exams.map((exam) => {
       const sess = sessionByExam.get(exam.id);

@@ -28,6 +28,11 @@ export async function finalizeExamSession(
             questions: true,
           },
         },
+        session_questions: {
+          include: {
+            question: true,
+          },
+        },
         answers: true,
         student: true,
       },
@@ -48,7 +53,10 @@ export async function finalizeExamSession(
     }
 
     const now = new Date();
-    const questions = session.exam.questions;
+    const questions =
+      session.session_questions.length > 0
+        ? session.session_questions.map((sq) => sq.question)
+        : session.exam.questions;
     const totalQuestions = questions.length;
 
     // Map student answers by question_id

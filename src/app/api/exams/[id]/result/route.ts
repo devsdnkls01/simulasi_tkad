@@ -19,6 +19,7 @@ export async function GET(
         exam_id: examId,
         student_id: studentSession.id,
       },
+      orderBy: { created_at: 'desc' },
       include: {
         exam: true,
         student: true,

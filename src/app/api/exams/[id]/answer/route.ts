@@ -30,6 +30,7 @@ export async function POST(
         exam_id: examId,
         student_id: studentSession.id,
       },
+      orderBy: { created_at: 'desc' },
       include: {
         answers: {
           where: { question_id },

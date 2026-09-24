@@ -59,12 +59,14 @@ export async function POST(
       );
     }
 
-    // Check if an existing session already exists for this student & exam
-    const existingSession = await prisma.examSession.findFirst({
+    // Check if an ACTIVE ongoing session exists for this student & exam
+    const ongoingSession = await prisma.examSession.findFirst({
       where: {
         exam_id: examId,
         student_id: student.id,
+        status: { in: ['IN_PROGRESS', 'PAUSED'] },
       },
+      orderBy: { created_at: 'desc' },
       include: {
         session_questions: {
           orderBy: { display_order: 'asc' },
@@ -74,48 +76,26 @@ export async function POST(
 
     const now = new Date();
 
-    if (existingSession) {
-      // If already finished, block
-      if (
-        existingSession.status === 'SUBMITTED' ||
-        existingSession.status === 'TIME_EXPIRED'
-      ) {
-        return NextResponse.json(
-          {
-            error: 'Ujian telah selesai.',
-            sessionId: existingSession.id,
-            status: existingSession.status,
-          },
-          { status: 400 }
-        );
-      }
-
-      // Check if time expired on server
-      if (now >= new Date(existingSession.expected_end_at)) {
+    if (ongoingSession) {
+      // Check if time expired on server for this active session
+      if (now >= new Date(ongoingSession.expected_end_at)) {
         await prisma.examSession.update({
-          where: { id: existingSession.id },
+          where: { id: ongoingSession.id },
           data: { status: 'TIME_EXPIRED', actual_end_at: now },
         });
-        return NextResponse.json(
-          {
-            error: 'Waktu ujian telah habis.',
-            sessionId: existingSession.id,
-            status: 'TIME_EXPIRED',
-          },
-          { status: 400 }
-        );
+        // Sesi yang lalu telah kedaluwarsa, alur berlanjut ke bawah untuk membuat sesi/percobaan baru!
+      } else {
+        // Resume ongoing active session without resetting timer
+        return NextResponse.json({
+          success: true,
+          isResumed: true,
+          sessionId: ongoingSession.id,
+          started_at: ongoingSession.started_at,
+          expected_end_at: ongoingSession.expected_end_at,
+          server_time: now.toISOString(),
+          total_questions: ongoingSession.session_questions.length || exam.questions.length,
+        });
       }
-
-      // Resume ongoing session without resetting timer!
-      return NextResponse.json({
-        success: true,
-        isResumed: true,
-        sessionId: existingSession.id,
-        started_at: existingSession.started_at,
-        expected_end_at: existingSession.expected_end_at,
-        server_time: now.toISOString(),
-        total_questions: exam.questions.length,
-      });
     }
 
     // Create NEW exam session with authoritative server-side timestamps

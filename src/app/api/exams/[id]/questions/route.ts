@@ -14,12 +14,13 @@ export async function GET(
 
     const { id: examId } = await params;
 
-    // Get active session
+    // Get active session (most recent)
     const session = await prisma.examSession.findFirst({
       where: {
         exam_id: examId,
         student_id: studentSession.id,
       },
+      orderBy: { created_at: 'desc' },
       include: {
         session_questions: {
           orderBy: { display_order: 'asc' },

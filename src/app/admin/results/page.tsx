@@ -9,6 +9,8 @@ import {
   CheckCircle2,
   Loader2,
   RefreshCw,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface ResultRow {
@@ -28,6 +30,9 @@ export default function AdminResultsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [exporting, setExporting] = useState<string | null>(null);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   const fetchResults = async () => {
     try {
@@ -41,6 +46,25 @@ export default function AdminResultsPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetAll = async () => {
+    try {
+      setResetting(true);
+      const res = await fetch('/api/admin/results/reset-all', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setResetMessage('Berhasil mereset semua nilai dan riwayat sesi ujian.');
+        setShowResetModal(false);
+        fetchResults();
+      } else {
+        alert(data.error || 'Gagal melakukan reset.');
+      }
+    } catch {
+      alert('Terjadi kesalahan jaringan.');
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -85,6 +109,15 @@ export default function AdminResultsPage() {
 
   return (
     <div className="space-y-6">
+      {resetMessage && (
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm font-bold flex items-center justify-between">
+          <span>{resetMessage}</span>
+          <button onClick={() => setResetMessage(null)} className="text-emerald-600 hover:text-emerald-900">
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -97,8 +130,16 @@ export default function AdminResultsPage() {
           </p>
         </div>
 
-        {/* Export Buttons */}
-        <div className="flex items-center gap-2.5">
+        {/* Export & Reset Buttons */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => setShowResetModal(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 font-bold text-xs sm:text-sm rounded-xl transition-all shadow-xs cursor-pointer"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Reset Semua Nilai</span>
+          </button>
+
           <button
             onClick={() => handleExport('xlsx')}
             disabled={exporting !== null}
@@ -219,6 +260,50 @@ export default function AdminResultsPage() {
           </table>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 mx-auto">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1">
+              <h3 className="text-lg font-bold text-slate-900">Reset Seluruh Nilai Ujian?</h3>
+              <p className="text-xs sm:text-sm text-slate-500">
+                Tindakan ini akan menghapus <strong>seluruh hasil skor, jawaban, dan riwayat sesi</strong> semua siswa. Siswa dapat memulai kembali ujian dari awal tanpa batasan.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowResetModal(false)}
+                disabled={resetting}
+                className="flex-1 h-11 px-4 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs sm:text-sm hover:bg-slate-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleResetAll}
+                disabled={resetting}
+                className="flex-1 h-11 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm transition-all shadow-xs hover:shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {resetting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Mereset...</span>
+                  </>
+                ) : (
+                  'Ya, Reset Semua'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

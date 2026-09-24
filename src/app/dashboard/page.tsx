@@ -15,6 +15,7 @@ import {
   Award,
   BookOpen,
   Sparkles,
+  RotateCcw,
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 
@@ -257,9 +258,16 @@ export default function StudentDashboardPage() {
                         </span>
                       )}
                       {(exam.session_status === 'SUBMITTED' || exam.session_status === 'TIME_EXPIRED') && (
-                        <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200">
-                          Selesai
-                        </span>
+                        <>
+                          <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200">
+                            Selesai
+                          </span>
+                          {exam.score !== null && (
+                            <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-800 font-bold text-xs border border-blue-200">
+                              Nilai Terakhir: {exam.score}
+                            </span>
+                          )}
+                        </>
                       )}
                       {exam.session_status === 'NOT_STARTED' && (
                         <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 font-bold text-xs">
@@ -284,7 +292,7 @@ export default function StudentDashboardPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     {exam.session_status === 'NOT_STARTED' && (
                       <button
                         onClick={() => handleOpenTokenModal(exam)}
@@ -306,13 +314,22 @@ export default function StudentDashboardPage() {
                     )}
 
                     {(exam.session_status === 'SUBMITTED' || exam.session_status === 'TIME_EXPIRED') && (
-                      <button
-                        onClick={() => router.push(`/exam/${exam.id}/result`)}
-                        className="w-full sm:w-auto h-12 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 border border-slate-200"
-                      >
-                        <Award className="w-4 h-4 text-blue-600" />
-                        <span>LIHAT HASIL</span>
-                      </button>
+                      <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                        <button
+                          onClick={() => router.push(`/exam/${exam.id}/result`)}
+                          className="w-full sm:w-auto h-12 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 border border-slate-200"
+                        >
+                          <Award className="w-4 h-4 text-blue-600" />
+                          <span>LIHAT HASIL</span>
+                        </button>
+                        <button
+                          onClick={() => handleOpenTokenModal(exam)}
+                          className="w-full sm:w-auto h-12 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all shadow-xs hover:shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                          <span>COBA LAGI</span>
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
